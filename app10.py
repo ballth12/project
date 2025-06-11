@@ -5,7 +5,7 @@ import time
 import uuid
 import secrets
 from dotenv import load_dotenv
-from detector4 import ImageDetector
+from detector import ImageDetector
 from google_api10_1 import create_flow, login_required, get_drive_service, get_sheets_service, create_user_resources, create_refresh_endpoint, get_valid_credentials
 from google_api10_2 import GoogleAPIClient
 from google_drive_handler import GoogleDriveHandler
