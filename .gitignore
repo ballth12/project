@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+ENV/
+env/
+
+# Local development settings
+.env
+.vscode/
+.idea/
+
+# Sensitive information
+client_secret.json
+*.pem
+*.key
+
+# Generated files
+uploads/
+processed/
+
+# Model files (ถ้าคุณต้องการอัปโหลดโมเดลไปยัง Heroku ให้ comment บรรทัดเหล่านี้)
+# *.pt
+# *.pth
+# *.onnx
+
+# Temporary files
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.swp
+
+# Heroku
+.slug-post-clean

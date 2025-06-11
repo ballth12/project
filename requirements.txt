@@ -1,0 +1,10 @@
+Flask
+opencv-python
+numpy
+ultralytics
+easyocr
+google-auth
+google-auth-oauthlib
+google-api-python-client
+waitress
+python-dotenv

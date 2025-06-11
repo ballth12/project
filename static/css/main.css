@@ -1,0 +1,160 @@
+/* main.css - สำหรับสไตล์ที่ใช้ร่วมกันระหว่างหลายหน้า */
+
+/* Dark Mode Styles */
+html.dark {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+html.dark body {
+    background-color: #121212;
+}
+
+html.dark .bg-white {
+    background-color: #1e1e1e;
+}
+
+html.dark .bg-gray-50 {
+    background-color: #2a2a2a;
+}
+
+html.dark .bg-gray-100 {
+    background-color: #121212;
+}
+
+html.dark .text-gray-600, 
+html.dark .text-gray-700, 
+html.dark .text-gray-800 {
+    color: #b0b0b0;
+}
+
+html.dark .text-gray-500 {
+    color: #909090;
+}
+
+html.dark .border-gray-300 {
+    border-color: #404040;
+}
+
+html.dark .shadow-md {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .text-blue-600 {
+    color: #5a9eed; /* ทำให้สีฟ้าสว่างขึ้นใน Dark Mode */
+}
+
+html.dark .text-green-600 {
+    color: #4ade80; /* ทำให้สีเขียวสว่างขึ้นใน Dark Mode */
+}
+
+html.dark .bg-blue-500 {
+    background-color: #3b82f6;
+}
+
+html.dark .bg-green-500 {
+    background-color: #10b981;
+}
+
+html.dark .bg-red-500 {
+    background-color: #ef4444;
+}
+
+html.dark .bg-purple-600 {
+    background-color: #8b5cf6;
+}
+
+html.dark .border {
+    border-color: #404040;
+}
+
+html.dark input, 
+html.dark select, 
+html.dark textarea {
+    background-color: #2d2d2d;
+    border-color: #404040;
+    color: #e0e0e0;
+}
+
+html.dark input:focus, 
+html.dark select:focus, 
+html.dark textarea:focus {
+    border-color: #5a9eed;
+}
+
+html.dark .tooltip .tooltiptext {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+}
+
+/* Theme Switch Styles */
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #3b82f6;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Moon/Sun Icons */
+.sun-icon, .moon-icon {
+    position: absolute;
+    top: 4px;
+    font-size: 16px;
+    transition: .4s;
+}
+
+.sun-icon {
+    left: 6px;
+    opacity: 1;
+}
+
+.moon-icon {
+    right: 6px;
+    opacity: 0;
+}
+
+input:checked ~ .sun-icon {
+    opacity: 0;
+}
+
+input:checked ~ .moon-icon {
+    opacity: 1;
+}
