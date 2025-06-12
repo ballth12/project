@@ -133,8 +133,8 @@ class ImageDetector:
         
         return processed_images
 
-    def perform_ocr(self, img_data):
-        """ทำ OCR กับภาพหนึ่งภาพ (ปรับปรุงแบบเดียวกับ im1.7, im2.1, imRN1)"""
+    def perform_ocr(self, img_data, is_decimal=False):
+        """ทำ OCR กับภาพหนึ่งภาพ และคืนผลลัพธ์"""
         img_name, img = img_data
         
         # ทดลองปรับพารามิเตอร์ EasyOCR หลายแบบ
@@ -177,7 +177,7 @@ class ImageDetector:
                 add_margin=0.2,
                 text_threshold=0.4,
                 low_text=0.2,
-                mag_ratio=1.5
+                mag_ratio=4.0 if is_decimal else 1.5  # ปรับ mag_ratio เฉพาะ decimal
             )
             for detection in result2:
                 bbox, text, conf = detection
@@ -201,7 +201,7 @@ class ImageDetector:
                 low_text=0.4,
                 link_threshold=0.4,
                 canvas_size=2560,
-                mag_ratio=2.0
+                mag_ratio=8.0 if is_decimal else 2.0  # ปรับ mag_ratio เฉพาะ decimal
             )
             for detection in result3:
                 bbox, text, conf = detection
@@ -222,7 +222,7 @@ class ImageDetector:
                 low_text=0.5,
                 link_threshold=0.5,
                 canvas_size=1280,
-                mag_ratio=1.0,
+                mag_ratio=4.0 if is_decimal else 1.0,  # ปรับ mag_ratio เฉพาะ decimal
                 slope_ths=0.2,
                 ycenter_ths=0.5,
                 height_ths=0.5,
@@ -249,7 +249,7 @@ class ImageDetector:
                 low_text=0.1,
                 link_threshold=0.2,
                 canvas_size=3840,
-                mag_ratio=3.0,
+                mag_ratio=12.0 if is_decimal else 3.0,  # ปรับ mag_ratio เฉพาะ decimal
                 contrast_ths=0.05,
                 adjust_contrast=0.3,
                 height_ths=0.3,
@@ -338,7 +338,7 @@ class ImageDetector:
         cleaned_text = ''.join(re.findall(r'\d+', text))
         return (cleaned_text, conf, method) if cleaned_text else None
 
-    def get_all_detections(self, model, img, expected_lengths, pattern=None):
+    def get_all_detections(self, model, img, expected_lengths, pattern=None, is_decimal=False):
         """ตรวจจับทุก bounding box และทำ OCR พร้อมคืนข้อมูลทั้งหมด"""
         results = model(img)
         boxes = results[0].boxes.xyxy.cpu().numpy()
@@ -360,7 +360,7 @@ class ImageDetector:
                 # ทำ OCR แบบขนาน
                 all_ocr_results = []
                 with ThreadPoolExecutor(max_workers=4) as executor:
-                    futures = [executor.submit(self.perform_ocr, (img_name, img)) for img_name, img in processed_images]
+                    futures = [executor.submit(self.perform_ocr, (img_name, img), is_decimal) for img_name, img in processed_images]
                     for future in futures:
                         results = future.result()
                         if results:
@@ -562,7 +562,7 @@ class ImageDetector:
         
         print("กำลังตรวจจับเลขทศนิยม...")
         decimal_detections = self.get_all_detections(
-            self.decimal_model, img, self.EXPECTED_DECIMAL_LENGTH, self.DECIMAL_PATTERN)
+            self.decimal_model, img, self.EXPECTED_DECIMAL_LENGTH, self.DECIMAL_PATTERN, is_decimal=True)
         
         print(f"พบเลขห้อง {len(room_detections)} ตัว, มิเตอร์ {len(meter_detections)} ตัว, ทศนิยม {len(decimal_detections)} ตัว")
         
