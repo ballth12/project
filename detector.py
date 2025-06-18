@@ -16,13 +16,11 @@ class ImageDetector:
         กำหนดค่าเริ่มต้นสำหรับตัวตรวจจับรูปภาพ
         
         Args:
-            models_config (dict, optional): ค่า configuration ของโมเดลต่างๆ
+            models_config (dict, optional): ค่า configuration ของโมเดล
         """
         if models_config is None:
             models_config = {
-                'room_model_path': 'bestRN.pt',
-                'meter_model_path': 'bestM1.pt',
-                'decimal_model_path': 'bestM2.pt',
+                'model_path': 'bestMR.pt',  # เปลี่ยนเป็น model เดียว
                 'use_gpu': True
             }
         
@@ -38,11 +36,16 @@ class ImageDetector:
         self.METER_PATTERN = r'^\d{4,7}$'  # รูปแบบเลขมิเตอร์ปกติ (4-7 หลัก)
         self.DECIMAL_PATTERN = r'^\d{1}$'  # รูปแบบเลขทศนิยมปกติ (1 หลัก)
         
-        # โหลดโมเดล YOLO
+        # กำหนด class mapping
+        self.CLASS_MAP = {
+            0: 'meter',     # เลขมิเตอร์จำนวนเต็ม
+            1: 'meter1',    # เลขมิเตอร์หลักทศนิยม
+            2: 'roomN'      # เลขห้อง
+        }
+        
+        # โหลดโมเดล YOLO เดียว
         print("กำลังโหลดโมเดล YOLO...")
-        self.room_model = YOLO(models_config['room_model_path'])
-        self.meter_model = YOLO(models_config['meter_model_path'])
-        self.decimal_model = YOLO(models_config['decimal_model_path'])
+        self.unified_model = YOLO(models_config['model_path'])
         
         # โหลด EasyOCR
         print("กำลังโหลด EasyOCR...")
@@ -50,9 +53,9 @@ class ImageDetector:
         
         # สีสำหรับ bounding box
         self.colors = {
-            'room': (255, 0, 0),     # สีแดง
+            'roomN': (255, 0, 0),    # สีแดง
             'meter': (0, 255, 0),    # สีเขียว
-            'decimal': (0, 0, 255)   # สีน้ำเงิน
+            'meter1': (0, 0, 255)    # สีน้ำเงิน
         }
         
         # จบการจับเวลา
@@ -177,7 +180,7 @@ class ImageDetector:
                 add_margin=0.2,
                 text_threshold=0.4,
                 low_text=0.2,
-                mag_ratio=4.0 if is_decimal else 1.5  # ปรับ mag_ratio เฉพาะ decimal
+                mag_ratio=6.0 if is_decimal else 1.5  # ปรับ mag_ratio เฉพาะ decimal
             )
             for detection in result2:
                 bbox, text, conf = detection
@@ -338,63 +341,93 @@ class ImageDetector:
         cleaned_text = ''.join(re.findall(r'\d+', text))
         return (cleaned_text, conf, method) if cleaned_text else None
 
-    def get_all_detections(self, model, img, expected_lengths, pattern=None, is_decimal=False):
-        """ตรวจจับทุก bounding box และทำ OCR พร้อมคืนข้อมูลทั้งหมด"""
-        results = model(img)
+    def get_detections_by_class(self, img):
+        """ตรวจจับทุก bounding box และแยกตาม class"""
+        results = self.unified_model(img)
         boxes = results[0].boxes.xyxy.cpu().numpy()
         confidences = results[0].boxes.conf.cpu().numpy()
+        classes = results[0].boxes.cls.cpu().numpy()
         
-        detections = []
+        # แยกการตรวจจับตาม class
+        detections_by_class = {
+            'roomN': [],
+            'meter': [],
+            'meter1': []
+        }
         
-        for j, (box, conf) in enumerate(zip(boxes, confidences)):
+        for j, (box, conf, cls) in enumerate(zip(boxes, confidences, classes)):
             if conf >= self.CONF_THRESHOLD:
-                x1, y1, x2, y2 = map(int, box)
-                cropped_img = img[y1:y2, x1:x2]
-                
-                if cropped_img.shape[0] < 15 or cropped_img.shape[1] < 15:
-                    continue
-                
-                # ประมวลผลภาพหลายรูปแบบ
-                processed_images = self.preprocess_for_ocr(cropped_img)
-                
-                # ทำ OCR แบบขนาน
-                all_ocr_results = []
-                with ThreadPoolExecutor(max_workers=4) as executor:
-                    futures = [executor.submit(self.perform_ocr, (img_name, img), is_decimal) for img_name, img in processed_images]
-                    for future in futures:
-                        results = future.result()
-                        if results:
-                            all_ocr_results.extend(results)
-                
-                # เลือกผลลัพธ์ที่ดีที่สุด
-                best_result_data = self.filter_and_select_best_result(all_ocr_results, expected_lengths, pattern)
-                
-                if best_result_data:
-                    number, number_conf, method = best_result_data
+                class_name = self.CLASS_MAP.get(int(cls))
+                if class_name:
+                    x1, y1, x2, y2 = map(int, box)
+                    cropped_img = img[y1:y2, x1:x2]
                     
-                    # คำนวณจุดกึ่งกลางของ bounding box
-                    center_x = (x1 + x2) / 2
-                    center_y = (y1 + y2) / 2
+                    if cropped_img.shape[0] < 15 or cropped_img.shape[1] < 15:
+                        continue
                     
-                    detections.append({
-                        'number': number,
-                        'confidence': number_conf,
-                        'method': method,
-                        'box': [x1, y1, x2, y2],
-                        'center': (center_x, center_y),
-                        'detection_confidence': conf
-                    })
+                    # กำหนดพารามิเตอร์สำหรับแต่ละ class
+                    if class_name == 'roomN':
+                        expected_lengths = self.EXPECTED_ROOM_LENGTH
+                        pattern = self.ROOM_PATTERN
+                        is_decimal = False
+                    elif class_name == 'meter':
+                        expected_lengths = self.EXPECTED_METER_LENGTH
+                        pattern = self.METER_PATTERN
+                        is_decimal = False
+                    elif class_name == 'meter1':
+                        expected_lengths = self.EXPECTED_DECIMAL_LENGTH
+                        pattern = self.DECIMAL_PATTERN
+                        is_decimal = True
+                    
+                    # ประมวลผลภาพหลายรูปแบบ
+                    processed_images = self.preprocess_for_ocr(cropped_img)
+                    
+                    # ทำ OCR แบบขนาน
+                    all_ocr_results = []
+                    with ThreadPoolExecutor(max_workers=4) as executor:
+                        futures = [executor.submit(self.perform_ocr, (img_name, img), is_decimal) 
+                                 for img_name, img in processed_images]
+                        for future in futures:
+                            ocr_results = future.result()
+                            if ocr_results:
+                                all_ocr_results.extend(ocr_results)
+                    
+                    # เลือกผลลัพธ์ที่ดีที่สุด
+                    best_result_data = self.filter_and_select_best_result(
+                        all_ocr_results, expected_lengths, pattern)
+                    
+                    if best_result_data:
+                        number, number_conf, method = best_result_data
+                        
+                        # คำนวณจุดกึ่งกลางของ bounding box
+                        center_x = (x1 + x2) / 2
+                        center_y = (y1 + y2) / 2
+                        
+                        detection_data = {
+                            'number': number,
+                            'confidence': number_conf,
+                            'method': method,
+                            'box': [x1, y1, x2, y2],
+                            'center': (center_x, center_y),
+                            'detection_confidence': conf,
+                            'class': class_name
+                        }
+                        
+                        detections_by_class[class_name].append(detection_data)
         
-        return detections
+        return detections_by_class
 
     def calculate_distance(self, point1, point2):
         """คำนวณระยะห่างระหว่างจุด 2 จุด"""
         return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
-    def find_best_pairs(self, room_detections, meter_detections, decimal_detections):
+    def find_best_pairs_unified(self, detections_by_class):
         """หาคู่ที่ดีที่สุด - เฉพาะกรณีที่มีทั้งเลขห้องและมิเตอร์เท่านั้น"""
+        room_detections = detections_by_class['roomN']
+        meter_detections = detections_by_class['meter']
+        decimal_detections = detections_by_class['meter1']
         
-        # กรณีที่ 1: มีทั้งเลขห้องและมิเตอร์ → ใช้ proximity matching
+        # ใช้ logic เดิมในการหาคู่ที่ดีที่สุด
         if room_detections and meter_detections:
             best_pair = None
             best_score = -1
@@ -442,22 +475,24 @@ class ImageDetector:
             
             return best_pair
         
-        # กรณีอื่นๆ: ไม่บันทึกข้อมูล (ต้องเจอทั้งเลขห้องและมิเตอร์)
-        else:
-            return None
+        return None
 
-    def draw_detection_results(self, img, best_pair, room_detections, meter_detections, decimal_detections):
-        """วาด bounding box และข้อความผลลัพธ์บนรูปภาพสำหรับคู่ที่ดีที่สุด(ถ้า พบเฉพาะห้องหรือ พบเฉพาะมิเตอร์ ก็วาดด้วย)"""
+    def draw_detection_results_unified(self, img, best_pair, detections_by_class):
+        """วาด bounding box และข้อความผลลัพธ์บนรูปภาพสำหรับคู่ที่ดีที่สุด"""
         display_img = img.copy()
         
+        room_detections = detections_by_class['roomN']
+        meter_detections = detections_by_class['meter']
+        decimal_detections = detections_by_class['meter1']
+        
         if best_pair:
-            # กรณีที่มีคู่ที่ดีที่สุด - วาดข้อมูลจากคู่นั้น
+            # วาดข้อมูลจากคู่ที่ดีที่สุด
             if best_pair['room']:
                 room_data = best_pair['room']
                 x1, y1, x2, y2 = room_data['box']
-                cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['room'], 2)
+                cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['roomN'], 2)
                 cv2.putText(display_img, f"Room: {room_data['number']}", 
-                           (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['room'], 2)
+                           (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['roomN'], 2)
             
             if best_pair['meter']:
                 meter_data = best_pair['meter']
@@ -469,9 +504,9 @@ class ImageDetector:
             if best_pair['decimal']:
                 decimal_data = best_pair['decimal']
                 x1, y1, x2, y2 = decimal_data['box']
-                cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['decimal'], 2)
+                cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['meter1'], 2)
                 cv2.putText(display_img, f"Decimal: {decimal_data['number']}", 
-                           (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['decimal'], 2)
+                           (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['meter1'], 2)
         else:
             # กรณีที่ไม่มีคู่ที่ดีที่สุด - วาดข้อมูลที่ดีที่สุดของแต่ละประเภท
             
@@ -479,9 +514,9 @@ class ImageDetector:
             if room_detections:
                 best_room = max(room_detections, key=lambda x: x['confidence'] * 0.7 + x['detection_confidence'] * 0.3)
                 x1, y1, x2, y2 = best_room['box']
-                cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['room'], 2)
+                cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['roomN'], 2)
                 cv2.putText(display_img, f"Room: {best_room['number']}", 
-                           (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['room'], 2)
+                           (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['roomN'], 2)
             
             # วาดเลขมิเตอร์ที่ดีที่สุด (ถ้ามี)
             if meter_detections:
@@ -504,17 +539,17 @@ class ImageDetector:
                 # วาดเลขทศนิยมที่ใกล้ที่สุด (ถ้าอยู่ใกล้พอ)
                 if closest_decimal and min_decimal_distance < 600:
                     x1, y1, x2, y2 = closest_decimal['box']
-                    cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['decimal'], 2)
+                    cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['meter1'], 2)
                     cv2.putText(display_img, f"Decimal: {closest_decimal['number']}", 
-                               (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['decimal'], 2)
+                               (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['meter1'], 2)
             
             # วาดเลขทศนิยมที่ดีที่สุด (ถ้าไม่มีมิเตอร์แต่มีทศนิยม)
             elif decimal_detections:
                 best_decimal = max(decimal_detections, key=lambda x: x['confidence'] * 0.7 + x['detection_confidence'] * 0.3)
                 x1, y1, x2, y2 = best_decimal['box']
-                cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['decimal'], 2)
+                cv2.rectangle(display_img, (x1, y1), (x2, y2), self.colors['meter1'], 2)
                 cv2.putText(display_img, f"Decimal: {best_decimal['number']}", 
-                           (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['decimal'], 2)
+                           (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.colors['meter1'], 2)
         
         return display_img
 
@@ -544,7 +579,7 @@ class ImageDetector:
             'google_drive_link': None,
             'image_path': image_path,
             'processed_image_path': None,
-            'can_upload': False,  # เปลี่ยนเป็น False เป็นค่าเริ่มต้น
+            'can_upload': False,
             'pairing_info': None
         }
         
@@ -552,22 +587,17 @@ class ImageDetector:
         start_time = time.time()
         
         # ตรวจจับทุก bounding box และทำ OCR
-        print("กำลังตรวจจับเลขห้อง...")
-        room_detections = self.get_all_detections(
-            self.room_model, img, self.EXPECTED_ROOM_LENGTH, self.ROOM_PATTERN)
+        print("กำลังตรวจจับ...")
+        detections_by_class = self.get_detections_by_class(img)
         
-        print("กำลังตรวจจับเลขมิเตอร์...")
-        meter_detections = self.get_all_detections(
-            self.meter_model, img, self.EXPECTED_METER_LENGTH, self.METER_PATTERN)
-        
-        print("กำลังตรวจจับเลขทศนิยม...")
-        decimal_detections = self.get_all_detections(
-            self.decimal_model, img, self.EXPECTED_DECIMAL_LENGTH, self.DECIMAL_PATTERN, is_decimal=True)
+        room_detections = detections_by_class['roomN']
+        meter_detections = detections_by_class['meter']
+        decimal_detections = detections_by_class['meter1']
         
         print(f"พบเลขห้อง {len(room_detections)} ตัว, มิเตอร์ {len(meter_detections)} ตัว, ทศนิยม {len(decimal_detections)} ตัว")
         
-        # หาคู่ที่ดีที่สุด (เฉพาะกรณีที่มีทั้งห้องและมิเตอร์)
-        best_pair = self.find_best_pairs(room_detections, meter_detections, decimal_detections)
+        # หาคู่ที่ดีที่สุด
+        best_pair = self.find_best_pairs_unified(detections_by_class)
         
         if best_pair:
             # เก็บผลลัพธ์เฉพาะกรณีที่มีทั้งเลขห้องและมิเตอร์
@@ -595,6 +625,7 @@ class ImageDetector:
                 full_meter = best_pair['meter']['number']
             
             results_dict['full_meter'] = full_meter
+            results_dict['can_upload'] = True
             
             # เก็บข้อมูลการจับคู่
             results_dict['pairing_info'] = {
@@ -608,19 +639,16 @@ class ImageDetector:
                 'total_decimals_found': len(decimal_detections)
             }
             
-            # *** เงื่อนไขใหม่: สามารถอัปโหลดได้เฉพาะเมื่อมีทั้งเลขห้องและเลขมิเตอร์ ***
-            results_dict['can_upload'] = True
-            
             print(f"✅ เลือกคู่ที่ดีที่สุด: ห้อง {best_pair['room']['number']} - มิเตอร์ {best_pair['meter']['number']}")
             if best_pair['decimal']:
                 print(f"   พร้อมทศนิยม: {best_pair['decimal']['number']}")
             print("✅ ข้อมูลครบถ้วน - สามารถบันทึกได้")
         
         else:
-            # กรณีที่ไม่พบข้อมูลครบถ้วน แต่ยังคงแสดงข้อมูลที่อ่านได้
+            # กรณีที่ไม่พบข้อมูลครบถ้วน
             print("❌ ไม่สามารถบันทึกได้ - ต้องเจอทั้งเลขห้องและเลขมิเตอร์")
             
-            # แสดงและเก็บข้อมูลที่พบแม้ไม่ครบถ้วน
+            # เก็บข้อมูลที่พบแม้ไม่ครบถ้วน
             if room_detections:
                 best_room = max(room_detections, key=lambda x: x['confidence'] * 0.7 + x['detection_confidence'] * 0.3)
                 results_dict['room_number'] = {
@@ -685,8 +713,8 @@ class ImageDetector:
                 'error': 'ต้องเจอทั้งเลขห้องและเลขมิเตอร์จึงจะสามารถบันทึกได้'
             }
         
-        # วาด bounding box บนรูปภาพ (แสดงทุกการตรวจจับที่พบ)
-        display_img = self.draw_detection_results(img, best_pair, room_detections, meter_detections, decimal_detections)
+        # วาด bounding box บนรูปภาพ
+        display_img = self.draw_detection_results_unified(img, best_pair, detections_by_class)
         
         # จบการจับเวลา
         end_time = time.time()
@@ -697,7 +725,7 @@ class ImageDetector:
         if output_folder:
             random_filename = f"{str(uuid.uuid4())}.jpg"
             output_path = os.path.join(output_folder, random_filename)
-            cv2.imwrite(output_path, display_img)  # บันทึกรูปที่มี bounding box
+            cv2.imwrite(output_path, display_img)
             results_dict['processed_image'] = random_filename
             results_dict['processed_image_path'] = output_path
         

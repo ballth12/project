@@ -1,6 +1,6 @@
 # server.py
 from waitress import serve
-from app10 import app
+from app import app
 import os
 
 # กำหนดพอร์ตที่ต้องการใช้ (ต้องตรงกับการตั้งค่า Port Forwarding)

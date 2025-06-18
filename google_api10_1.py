@@ -1,4 +1,4 @@
-# auth.py - ระบบการยืนยันตัวตน (แก้ไขแล้ว)
+# auth.py - ระบบการยืนยันตัวตน
 from flask import redirect, session, url_for, request, jsonify
 import os
 import pathlib
