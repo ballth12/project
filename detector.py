@@ -189,31 +189,7 @@ class ImageDetector:
         except Exception as e:
             pass
         
-        # ทดลอง 3: เน้นการอ่านแบบต่อเนื่อง
-        try:
-            result3 = self.reader.readtext(
-                img, 
-                detail=1, 
-                allowlist='0123456789',
-                paragraph=True,
-                width_ths=0.8,
-                height_ths=0.8,
-                y_ths=0.8,
-                x_ths=0.5,
-                text_threshold=0.6,
-                low_text=0.4,
-                link_threshold=0.4,
-                canvas_size=2560,
-                mag_ratio=8.0 if is_decimal else 2.0  # ปรับ mag_ratio เฉพาะ decimal
-            )
-            for detection in result3:
-                bbox, text, conf = detection
-                if conf > 0.1:
-                    ocr_results.append((text, conf, f"{img_name}_paragraph"))
-        except Exception as e:
-            pass
-        
-        # ทดลอง 4: การตั้งค่าสำหรับตัวเลขที่ชัดเจน
+        # ทดลอง 3: การตั้งค่าสำหรับตัวเลขที่ชัดเจน
         try:
             result4 = self.reader.readtext(
                 img, 
@@ -241,7 +217,7 @@ class ImageDetector:
         except Exception as e:
             pass
         
-        # ทดลอง 5: การตั้งค่าสำหรับตัวเลขที่จางหรือเบลอ
+        # ทดลอง 4: การตั้งค่าสำหรับตัวเลขที่จางหรือเบลอ
         try:
             result5 = self.reader.readtext(
                 img, 

@@ -1,4 +1,4 @@
-# app.py (แก้ไขแล้ว - ไม่ตั้งชื่อไฟล์ใหม่)
+# app.py
 from flask import Flask, request, render_template, jsonify, send_from_directory, redirect, session, url_for
 import os
 import time
@@ -6,8 +6,8 @@ import uuid
 import secrets
 from dotenv import load_dotenv
 from detector import ImageDetector
-from google_api10_1 import create_flow, login_required, create_user_resources, create_refresh_endpoint
-from google_api10_2 import GoogleAPIClient
+from google_auth import create_flow, login_required, create_refresh_endpoint
+from google_api_client import GoogleAPIClient, create_user_resources
 from google_drive_handler import GoogleDriveHandler
 
 # โหลดตัวแปรจากไฟล์ .env สำหรับการพัฒนาในเครื่อง
@@ -26,7 +26,7 @@ def before_request():
         return redirect(url, code=301)
 
 # กำหนดค่า Secret Key จาก environment variable หรือสร้างแบบสุ่ม
-app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+app.secret_key = os.environ.get('SECRET_KEY')
 
 # สร้างโฟลเดอร์สำหรับเก็บไฟล์อัปโหลดชั่วคราว
 UPLOAD_FOLDER = os.path.join(os.environ.get('TMPDIR', './'), 'uploads')
