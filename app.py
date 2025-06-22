@@ -197,14 +197,29 @@ def create_google_client_with_session_update():
     """
     สร้าง GoogleAPIClient และอัปเดต session หาก credentials ถูกต่ออายุ
     """
+    print(f"📊 Session before: {session.get('credentials', {}).get('token', 'None')[:20]}...")
+    
+    # เก็บ token เดิมไว้เปรียบเทียบ
+    old_token = session.get('credentials', {}).get('token', '')
+    
     google_client = GoogleAPIClient(oauth_credentials=session['credentials'])
     
     # ตรวจสอบว่า credentials ถูกอัปเดตหรือไม่
     updated_credentials = google_client.get_updated_credentials()
     if updated_credentials:
-        session['credentials'] = updated_credentials
-        session['credentials_refreshed_at'] = time.time()
-        print("✅ Session updated with refreshed credentials")
+        new_token = updated_credentials.get('token', '')
+        
+        # เปรียบเทียบ token - update เฉพาะเมื่อ token เปลี่ยน
+        if old_token != new_token:
+            print(f"📊 Session after: {new_token[:20]}...")
+            session['credentials'] = updated_credentials
+            session.permanent = True
+            session['credentials_refreshed_at'] = time.time()
+            print("✅ Session updated with refreshed credentials")
+        else:
+            print("ℹ️ Token unchanged, no session update needed")
+    else:
+        print("ℹ️ No credentials update needed")
     
     return google_client
 

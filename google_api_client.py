@@ -56,12 +56,18 @@ class GoogleAPIClient:
         ตรวจสอบและต่ออายุ credentials ถ้าจำเป็น
         """
         if not self.credentials:
+            print("❌ No credentials found")
             return False
+        
+        # print(f"🔍 Token check - Valid: {self.credentials.valid}")
+        # print(f"🔍 Token check - Expired: {self.credentials.expired}")
+        # print(f"🔍 Token check - Expiry: {self.credentials.expiry}")
+        # print(f"🔍 Token check - Has refresh token: {bool(self.credentials.refresh_token)}")
         
         try:
             # ตรวจสอบว่า credentials หมดอายุหรือไม่
             if self.credentials.expired and self.credentials.refresh_token:
-                print("Credentials expired, refreshing...")
+                print("🔄 Token is expired, refreshing...")
                 self.credentials.refresh(Request())
                 
                 # อัปเดต oauth_credentials_dict ด้วยข้อมูลใหม่
@@ -78,8 +84,10 @@ class GoogleAPIClient:
                 print("Credentials refreshed successfully")
                 return True
             elif not self.credentials.valid:
-                print("Credentials are not valid and cannot be refreshed")
+                print("❌ Token is invalid but cannot refresh")
                 return False
+            # else:
+            #     print("✅ Token is still valid, no refresh needed")
             
             return True
             
