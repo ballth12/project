@@ -58,18 +58,20 @@ class ImageDetector:
             'meter1': (0, 0, 255)    # สีน้ำเงิน
         }
         
+        # Cache CLAHE objects
+        self.clahe_enhance = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+        self.clahe_ocr = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        
         # จบการจับเวลา
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"โหลดโมเดลและเตรียมระบบเสร็จสิ้น (ใช้เวลา {elapsed_time:.2f} วินาที)")
 
-    @staticmethod
-    def enhance_contrast(img):
-        """เพิ่มความคมชัดให้กับรูปภาพโดยใช้ CLAHE"""
+    def enhance_contrast(self, img):
+        """เพิ่มความคมชัดให้กับรูปภาพโดยใช้ CLAHE ที่ cache ไว้"""
         lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-        cl = clahe.apply(l)
+        cl = self.clahe_enhance.apply(l)  # ใช้ cached CLAHE object
         enhanced_lab = cv2.merge((cl, a, b))
         enhanced_img = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
         return enhanced_img
@@ -87,9 +89,8 @@ class ImageDetector:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         processed_images.append(("gray", gray))
         
-        # 3. ปรับสมดุลแสงด้วย CLAHE
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        clahe_img = clahe.apply(gray)
+        # 3. ปรับสมดุลแสงด้วย CLAHE (ใช้ cached object)
+        clahe_img = self.clahe_ocr.apply(gray)
         processed_images.append(("clahe", clahe_img))
         
         # 4. ปรับขนาดภาพให้ใหญ่ขึ้น 2 เท่า
@@ -191,7 +192,7 @@ class ImageDetector:
         
         # ทดลอง 3: การตั้งค่าสำหรับตัวเลขที่ชัดเจน
         try:
-            result4 = self.reader.readtext(
+            result3 = self.reader.readtext(
                 img, 
                 detail=1, 
                 allowlist='0123456789',
@@ -210,7 +211,7 @@ class ImageDetector:
                 x_ths=1.5,
                 y_ths=0.5
             )
-            for detection in result4:
+            for detection in result3:
                 bbox, text, conf = detection
                 if conf > 0.15:
                     ocr_results.append((text, conf, f"{img_name}_clear"))
@@ -219,7 +220,7 @@ class ImageDetector:
         
         # ทดลอง 4: การตั้งค่าสำหรับตัวเลขที่จางหรือเบลอ
         try:
-            result5 = self.reader.readtext(
+            result4 = self.reader.readtext(
                 img, 
                 detail=1, 
                 allowlist='0123456789',
@@ -237,7 +238,7 @@ class ImageDetector:
                 x_ths=2.0,
                 y_ths=0.3
             )
-            for detection in result5:
+            for detection in result4:
                 bbox, text, conf = detection
                 if conf > 0.05:
                     ocr_results.append((text, conf, f"{img_name}_blur"))

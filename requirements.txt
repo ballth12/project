@@ -1,10 +1,22 @@
-Flask
-opencv-python
-numpy
-ultralytics
-easyocr
-google-auth
-google-auth-oauthlib
-google-api-python-client
-waitress
-python-dotenv
+# Core web framework
+Flask==3.1.1
+waitress==3.0.2
+python-dotenv==1.1.0
+
+# Computer Vision - ใช้แค่ headless version
+opencv-python-headless==4.11.0.86
+numpy==2.2.6
+pillow==11.2.1
+
+# AI/ML - YOLO และ OCR
+ultralytics==8.3.158
+easyocr==1.7.2
+
+# Google APIs
+google-auth==2.40.3
+google-auth-oauthlib==1.2.2
+google-api-python-client==2.173.0
+
+# Essential utilities
+requests==2.32.4
+PyYAML==6.0.2

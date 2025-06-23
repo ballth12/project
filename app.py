@@ -4,6 +4,7 @@ import os
 import time
 import uuid
 import secrets
+import threading
 from dotenv import load_dotenv
 from detector import ImageDetector
 from google_auth import create_flow, login_required, create_refresh_endpoint
@@ -42,6 +43,32 @@ detector = ImageDetector({
     'model_path': 'bestMR.pt',
     'use_gpu': True
 })
+
+# *** เพิ่ม: ฟังก์ชันสำหรับลบไฟล์หลังจาก delay ***
+def schedule_file_cleanup(file_paths, delay_seconds=60):
+    """
+    กำหนดเวลาลบไฟล์หลังจาก delay_seconds วินาที
+    
+    Args:
+        file_paths (list): รายการเส้นทางไฟล์ที่จะลบ
+        delay_seconds (int): เวลาหน่วงก่อนลบไฟล์ (วินาที)
+    """
+    def cleanup_files():
+        time.sleep(delay_seconds)
+        for file_path in file_paths:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"🧹 Cleaned up file: {file_path}")
+                else:
+                    print(f"⚠️ File not found for cleanup: {file_path}")
+            except Exception as e:
+                print(f"❌ Error cleaning up file {file_path}: {e}")
+    
+    # เริ่ม thread สำหรับลบไฟล์
+    cleanup_thread = threading.Thread(target=cleanup_files)
+    cleanup_thread.daemon = True  # ทำให้ thread หยุดเมื่อโปรแกรมหลักหยุด
+    cleanup_thread.start()
 
 # สร้าง refresh endpoint
 create_refresh_endpoint(app)
@@ -247,6 +274,12 @@ def process():
         try:
             results = detector.process_image(file_path, app.config['PROCESSED_FOLDER'])
             
+            # *** รวบรวมไฟล์ที่ต้องลบ ***
+            files_to_cleanup = [file_path]  # ไฟล์ต้นฉบับที่อัปโหลด
+            
+            if results.get('processed_image_path') and os.path.exists(results['processed_image_path']):
+                files_to_cleanup.append(results['processed_image_path'])  # ไฟล์ภาพที่ประมวลผลแล้ว
+            
             # *** อัปโหลดไปยัง Google Drive เฉพาะเมื่อ can_upload = True ***
             # (ซึ่งหมายความว่าต้องเจอทั้งเลขห้องและเลขมิเตอร์)
             if results['can_upload'] and 'credentials' in session:
@@ -281,8 +314,19 @@ def process():
                 if not results['can_upload']:
                     print("⚠️  ไม่อัปโหลดภาพเนื่องจากข้อมูลไม่ครบถ้วน (ต้องเจอทั้งเลขห้องและเลขมิเตอร์)")
             
+            # *** กำหนดเวลาลบไฟล์หลังจาก 60 วินาที ***
+            schedule_file_cleanup(files_to_cleanup, delay_seconds=60)
+            print(f"⏰ Scheduled cleanup for {len(files_to_cleanup)} files in 60 seconds")
+            
             return jsonify(results)
         except Exception as e:
+            # ลบไฟล์ทันทีถ้าเกิดข้อผิดพลาด
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"🧹 Cleaned up file immediately due to error: {file_path}")
+            except:
+                pass
             return jsonify({'error': f'เกิดข้อผิดพลาดในการประมวลผล: {str(e)}'})
 
 @app.route('/save-to-sheets', methods=['POST'])

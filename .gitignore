@@ -19,9 +19,15 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+.dockerignore
+.gcloudignore
+Dockerfile
+requirements1.txt
+*.yaml
+*.bat
 
 # Virtual Environments
-venv/
+venv*/
 ENV/
 env/
 
