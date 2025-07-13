@@ -22,7 +22,7 @@ var/
 .dockerignore
 .gcloudignore
 Dockerfile
-requirements1.txt
+requirements*.txt
 *.yaml
 *.bat
 
@@ -44,6 +44,8 @@ client_secret.json
 # Generated files
 uploads/
 processed/
+data-test/
+metertest*/
 
 # Model files (ถ้าคุณต้องการอัปโหลดโมเดลไปยัง Heroku ให้ comment บรรทัดเหล่านี้)
 # *.pt

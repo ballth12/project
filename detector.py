@@ -137,9 +137,8 @@ class ImageDetector:
         
         return processed_images
 
-    def perform_ocr(self, img_data, is_decimal=False):
+    def perform_ocr(self, img_name, img, is_decimal=False):
         """ทำ OCR กับภาพหนึ่งภาพ และคืนผลลัพธ์"""
-        img_name, img = img_data
         
         # ทดลองปรับพารามิเตอร์ EasyOCR หลายแบบ
         ocr_results = []
@@ -255,7 +254,7 @@ class ImageDetector:
         # จัดกลุ่มผลลัพธ์ตามความยาว
         results_by_length = {}
         for text, conf, method in all_ocr_results:
-            cleaned_text = ''.join(re.findall(r'\d+', text))
+            cleaned_text = ''.join(re.findall(r'\d+', text))  #**************************************
             if cleaned_text:  # ถ้ามีตัวเลข
                 length = len(cleaned_text)
                 if length not in results_by_length:
@@ -274,7 +273,10 @@ class ImageDetector:
             
             # ถ้าไม่มีความยาวที่คาดหวัง ให้เลือกความยาวที่มีผลลัพธ์มากที่สุด
             if not preferred_length:
-                length_counts = [(length, len(results)) for length, results in results_by_length.items()]
+                length_counts = []
+                for length, results in results_by_length.items():
+                    count = len(results)
+                    length_counts.append((length, count))
                 length_counts.sort(key=lambda x: x[1], reverse=True)
                 preferred_length = length_counts[0][0]
             
@@ -288,6 +290,7 @@ class ImageDetector:
                     text_frequency[text] = {'count': 0, 'max_conf': 0, 'method': method}
                 text_frequency[text]['count'] += 1
                 text_frequency[text]['max_conf'] = max(text_frequency[text]['max_conf'], conf)
+                # print(f"{text_frequency}{method}")
             
             # เลือกตัวเลขที่พบบ่อยที่สุดและมี confidence สูง
             best_text = None
@@ -296,6 +299,9 @@ class ImageDetector:
             best_conf = 0
             
             for text, info in text_frequency.items():
+                # print(text)
+                # print(info)
+                # print("--------------------------------")
                 # คะแนน = (ความถี่ * 0.3) + (confidence * 0.7)
                 score = (info['count'] * 0.3) + (info['max_conf'] * 0.7)
                 
@@ -362,9 +368,9 @@ class ImageDetector:
                     # ทำ OCR แบบขนาน
                     all_ocr_results = []
                     with ThreadPoolExecutor(max_workers=4) as executor:
-                        futures = [executor.submit(self.perform_ocr, (img_name, img), is_decimal) 
+                        futures = [executor.submit(self.perform_ocr, img_name, img, is_decimal) 
                                  for img_name, img in processed_images]
-                        for future in futures:
+                        for  future in futures:
                             ocr_results = future.result()
                             if ocr_results:
                                 all_ocr_results.extend(ocr_results)
