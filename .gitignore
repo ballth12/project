@@ -47,7 +47,7 @@ processed/
 data-test/
 metertest*/
 
-# Model files (ถ้าคุณต้องการอัปโหลดโมเดลไปยัง Heroku ให้ comment บรรทัดเหล่านี้)
+# Model files
 # *.pt
 # *.pth
 # *.onnx
@@ -58,6 +58,7 @@ Thumbs.db
 *.tmp
 *.bak
 *.swp
+*.md
 
 # Heroku
 .slug-post-clean

@@ -221,7 +221,7 @@ def main():
     ฟังก์ชันหลักสำหรับเรียกใช้งาน
     """
     test_folder = "data-test"
-    output_folder="metertest3"
+    output_folder="metertest4"
     
     # ตรวจสอบว่า folder มีอยู่จริงหรือไม่
     if not os.path.exists(test_folder):

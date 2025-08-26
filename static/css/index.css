@@ -26,8 +26,8 @@
 }
 
 .upload-icon {
-    width: 64px;
-    height: 64px;
+    width: 195px;
+    height: auto;
     margin: 0 auto 1rem;
     color: #9ca3af;
 }
@@ -50,7 +50,7 @@
 }
 
 .image-preview {
-    max-height: 300px;
+    max-height: 400px;
     max-width: 100%;
     border-radius: 0.375rem;
 }
@@ -144,12 +144,21 @@ html.dark .upload-sub-text {
 
 .badge-success {
     background-color: #10B981;
-    color: white;
+    color: #1f2937;
 }
 
 .badge-error {
     background-color: #EF4444;
-    color: white;
+    color: #1f2937;
+}
+
+.badge-warning{
+    background-color: #FFB302;
+    color: #1f2937;
+}
+
+#fileNameDisplay{
+    overflow-wrap: break-word;
 }
 
 .tooltip {
@@ -206,12 +215,13 @@ html.dark .upload-sub-text {
     
     /* ปรับ upload area สำหรับมือถือ */
     .upload-area {
+        min-height: auto;
         padding: 2rem 1rem;
     }
     
     .upload-icon {
-        width: 48px;
-        height: 48px;
+        width: 96px;
+        height: auto;
     }
     
     .upload-main-text {
@@ -220,5 +230,18 @@ html.dark .upload-sub-text {
     
     .upload-sub-text {
         font-size: 0.75rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .upload-area {
+        min-height: 50vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .upload-content {
+        width: 100%;
     }
 }

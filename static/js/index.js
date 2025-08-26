@@ -597,59 +597,46 @@ document.addEventListener('DOMContentLoaded', function() {
         saveTooltip.textContent = tooltipText;
     }
 
-    // เพิ่มสไตล์ CSS สำหรับ badge-warning ถ้ายังไม่มี
-    if (!document.querySelector('style[data-badge-warning]')) {
-        const style = document.createElement('style');
-        style.setAttribute('data-badge-warning', 'true');
-        style.textContent = `
-            .badge-warning {
-                background-color: #f59e0b;
-                color: white;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    // *** เพิ่ม: Manual Token Refresh Button (สำหรับ debugging) ***
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        const debugPanel = document.createElement('div');
-        debugPanel.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #f0f0f0; padding: 10px; border-radius: 5px; z-index: 9999; font-size: 12px;';
-        debugPanel.innerHTML = `
-            <strong>Debug Panel</strong><br>
-            <button id="manualRefreshBtn" style="margin-top: 5px; padding: 5px 10px; background: #3b82f6; color: white; border: none; border-radius: 3px; cursor: pointer;">
-                Manual Token Refresh
-            </button>
-            <div id="tokenStatus" style="margin-top: 5px; font-size: 11px;">
-                Token Status: Unknown
-            </div>
-        `;
-        document.body.appendChild(debugPanel);
+    // // *** เพิ่ม: Manual Token Refresh Button (สำหรับ debugging) ***
+    // if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    //     const debugPanel = document.createElement('div');
+    //     debugPanel.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #f0f0f0; padding: 10px; border-radius: 5px; z-index: 9999; font-size: 12px;';
+    //     debugPanel.innerHTML = `
+    //         <strong>Debug Panel</strong><br>
+    //         <button id="manualRefreshBtn" style="margin-top: 5px; padding: 5px 10px; background: #3b82f6; color: white; border: none; border-radius: 3px; cursor: pointer;">
+    //             Manual Token Refresh
+    //         </button>
+    //         <div id="tokenStatus" style="margin-top: 5px; font-size: 11px;">
+    //             Token Status: Unknown
+    //         </div>
+    //     `;
+    //     document.body.appendChild(debugPanel);
         
-        document.getElementById('manualRefreshBtn').addEventListener('click', async () => {
-            const statusDiv = document.getElementById('tokenStatus');
-            statusDiv.textContent = 'Refreshing...';
+    //     document.getElementById('manualRefreshBtn').addEventListener('click', async () => {
+    //         const statusDiv = document.getElementById('tokenStatus');
+    //         statusDiv.textContent = 'Refreshing...';
             
-            try {
-                const response = await fetch('/api/refresh-token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
+    //         try {
+    //             const response = await fetch('/api/refresh-token', {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'Content-Type': 'application/json',
+    //                 }
+    //             });
                 
-                const data = await response.json();
+    //             const data = await response.json();
                 
-                if (data.success) {
-                    statusDiv.textContent = 'Token Status: ✅ Refreshed';
-                    statusDiv.style.color = 'green';
-                } else {
-                    statusDiv.textContent = 'Token Status: ❌ Failed';
-                    statusDiv.style.color = 'red';
-                }
-            } catch (error) {
-                statusDiv.textContent = 'Token Status: ❌ Error';
-                statusDiv.style.color = 'red';
-            }
-        });
-    }
+    //             if (data.success) {
+    //                 statusDiv.textContent = 'Token Status: ✅ Refreshed';
+    //                 statusDiv.style.color = 'green';
+    //             } else {
+    //                 statusDiv.textContent = 'Token Status: ❌ Failed';
+    //                 statusDiv.style.color = 'red';
+    //             }
+    //         } catch (error) {
+    //             statusDiv.textContent = 'Token Status: ❌ Error';
+    //             statusDiv.style.color = 'red';
+    //         }
+    //     });
+    // }
 });

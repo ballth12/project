@@ -254,12 +254,11 @@ class ImageDetector:
         # จัดกลุ่มผลลัพธ์ตามความยาว
         results_by_length = {}
         for text, conf, method in all_ocr_results:
-            cleaned_text = ''.join(re.findall(r'\d+', text))  #**************************************
-            if cleaned_text:  # ถ้ามีตัวเลข
-                length = len(cleaned_text)
+            if text:  # ถ้ามีตัวเลข
+                length = len(text)
                 if length not in results_by_length:
                     results_by_length[length] = []
-                results_by_length[length].append((cleaned_text, conf, method))
+                results_by_length[length].append((text, conf, method))
         
         # ค้นหาความยาวที่พบบ่อยที่สุด
         if results_by_length:
@@ -289,9 +288,13 @@ class ImageDetector:
                 if text not in text_frequency:
                     text_frequency[text] = {'count': 0, 'max_conf': 0, 'method': method}
                 text_frequency[text]['count'] += 1
-                text_frequency[text]['max_conf'] = max(text_frequency[text]['max_conf'], conf)
-                # print(f"{text_frequency}{method}")
-            
+                if text_frequency[text]['max_conf'] < conf:   
+                    text_frequency[text]['max_conf'] = conf
+                    text_frequency[text]['method'] = method
+            #     print(f"{text_frequency}{method}")
+
+            # print(f"{text_frequency}{method}")
+
             # เลือกตัวเลขที่พบบ่อยที่สุดและมี confidence สูง
             best_text = None
             best_score = 0
@@ -299,8 +302,7 @@ class ImageDetector:
             best_conf = 0
             
             for text, info in text_frequency.items():
-                # print(text)
-                # print(info)
+                # print(f"{text} {info}")
                 # print("--------------------------------")
                 # คะแนน = (ความถี่ * 0.3) + (confidence * 0.7)
                 score = (info['count'] * 0.3) + (info['max_conf'] * 0.7)
@@ -319,10 +321,9 @@ class ImageDetector:
                 return (best_text, best_conf, best_method)
         
         # ถ้าไม่มีผลลัพธ์ที่ดี ใช้ตัวที่มี confidence สูงสุด
-        all_ocr_results.sort(key=lambda x: x[1], reverse=True)
-        text, conf, method = all_ocr_results[0]
-        cleaned_text = ''.join(re.findall(r'\d+', text))
-        return (cleaned_text, conf, method) if cleaned_text else None
+        the_best_conf = all_ocr_results.sort(key=lambda x: x[1], reverse=True)
+        text, conf, method = the_best_conf[0]
+        return (text, conf, method)
 
     def get_detections_by_class(self, img):
         """ตรวจจับทุก bounding box และแยกตาม class"""
@@ -338,6 +339,7 @@ class ImageDetector:
             'meter1': []
         }
         
+        # loop อ่านค่าตัวเลขในแต่ละรูป
         for j, (box, conf, cls) in enumerate(zip(boxes, confidences, classes)):
             if conf >= self.CONF_THRESHOLD:
                 class_name = self.CLASS_MAP.get(int(cls))
@@ -401,7 +403,10 @@ class ImageDetector:
         return detections_by_class
 
     def calculate_distance(self, point1, point2):
-        """คำนวณระยะห่างระหว่างจุด 2 จุด"""
+        """คำนวณระยะห่างระหว่างจุด 2 จุด
+        a^2 + b^2= c^2
+        (x1-x2)^2+(y1-y2)^2 = c^2
+        """
         return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
     def find_best_pairs_unified(self, detections_by_class):
@@ -419,6 +424,7 @@ class ImageDetector:
                 for meter in meter_detections:
                     # คำนวณระยะห่างระหว่างเลขห้องและมิเตอร์
                     distance = self.calculate_distance(room['center'], meter['center'])
+                    # print(f"{room['number']} {meter['number']} {distance}")
                     
                     # หาเลขทศนิยมที่ใกล้กับมิเตอร์นี้ที่สุด (ถ้ามี)
                     closest_decimal = None
@@ -426,9 +432,11 @@ class ImageDetector:
                     
                     for decimal in decimal_detections:
                         decimal_distance = self.calculate_distance(meter['center'], decimal['center'])
+                        # print(f"{meter['number']} {decimal['number']} {decimal_distance}")
                         if decimal_distance < min_decimal_distance:
                             min_decimal_distance = decimal_distance
                             closest_decimal = decimal
+                        # print(f"{closest_decimal['number']} {min_decimal_distance}")
                     
                     # แปลงระยะห่างเป็นคะแนน (ยิ่งใกล้ยิ่งได้คะแนนสูง)
                     distance_score = max(0, 1000 - distance) / 1000  # normalize ระยะห่าง
@@ -436,9 +444,13 @@ class ImageDetector:
                     # คะแนนจาก confidence
                     room_conf_score = room['confidence'] * 0.3 + room['detection_confidence'] * 0.2
                     meter_conf_score = meter['confidence'] * 0.3 + meter['detection_confidence'] * 0.2
+                    # print(f"{distance_score}")
+                    # print(f"{room_conf_score}")
+                    # print(f"{meter_conf_score}")
                     
                     # คะแนนรวม
                     total_score = distance_score * 0.4 + room_conf_score + meter_conf_score
+                    # print(min_decimal_distance)
                     
                     # เพิ่มคะแนนถ้ามีเลขทศนิยมที่ใกล้
                     if closest_decimal and min_decimal_distance < 200:  # ถ้าเลขทศนิยมอยู่ใกล้ภายใน 200 pixels
@@ -455,7 +467,7 @@ class ImageDetector:
                             'score': total_score,
                             'pairing_method': 'proximity_matching'
                         }
-            
+                    # print("-------------------------------------------------")
             return best_pair
         
         return None
