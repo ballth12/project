@@ -11,12 +11,12 @@ class GoogleDriveHandler:
     """
     
     @staticmethod
-    def upload_to_drive(file_path, file_name, session_data, google_client):
+    def upload_to_drive(processed_file_path, file_name, session_data, google_client):
         """
         อัปโหลดไฟล์ไปยัง Google Drive พร้อม Error Handling ที่ดีขึ้น
         
         Args:
-            file_path: เส้นทางของไฟล์ที่จะอัปโหลด
+            processed_file_path: เส้นทางของไฟล์ที่จะอัปโหลด
             file_name: ชื่อที่จะใช้บน Google Drive
             session_data: ข้อมูลเซสชันที่มี credentials
             google_client: GoogleAPIClient instance
@@ -36,7 +36,7 @@ class GoogleDriveHandler:
                 raise Exception("ไม่พบโฟลเดอร์สำหรับอัปโหลด")
             
             # อัปโหลดไฟล์ไปยัง Google Drive พร้อม file_name parameter
-            file_info = google_client.upload_to_drive(file_path, upload_folder_id, file_name)
+            file_info = google_client.upload_to_drive(processed_file_path, upload_folder_id, file_name)
             
             return file_info
             

@@ -18,12 +18,17 @@
                     <h1 class="text-2xl md:text-3xl font-bold text-blue-600">ระบบตรวจสอบเลขห้องและเลขมิเตอร์</h1>
                     <p class="text-gray-600 mt-2">อัปโหลดรูปภาพเพื่อตรวจจับเลขห้องและเลขมิเตอร์โดยอัตโนมัติ</p>
                 </div>
-                <div class="flex flex-col md:flex-row items-start md:items-center w-full md:w-auto">
-                    <div class="text-left md:text-right mr-4 mb-3 md:mb-0">
-                        <p class="text-gray-800 font-medium" id="userName">-</p>
-                        <p class="text-gray-600 text-sm" id="userEmail">-</p>
-                    </div>
-                    <div class="flex flex-row items-center space-x-4">
+                
+                <!-- Updated mobile layout -->
+                <div class="flex flex-row items-center justify-between w-full md:w-auto md:flex-col md:items-end">
+                    <!-- User info and controls container -->
+                    <div class="flex items-center space-x-4">
+                        <!-- User info -->
+                        <div class="text-left">
+                            <p class="text-gray-800 font-medium text-sm" id="userName">-</p>
+                            <p class="text-gray-600 text-xs" id="userEmail">-</p>
+                        </div>
+                        
                         <!-- Theme Switch -->
                         <div class="flex items-center">
                             <label class="theme-switch" for="themeToggle">
@@ -33,7 +38,9 @@
                                 <span class="moon-icon">🌙</span>
                             </label>
                         </div>
-                        <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded w-full md:w-auto text-center">
+                        
+                        <!-- Logout button -->
+                        <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded text-center text-sm">
                             ออกจากระบบ
                         </a>
                     </div>
@@ -151,70 +158,64 @@
         </div>
 
         <div class="bg-white rounded-lg shadow-md p-4 md:p-6 mt-8">
-  <h3 class="text-xl font-bold text-blue-600 mb-4">ข้อมูลบัญชีของคุณ</h3>
+            <h3 class="text-xl font-bold text-blue-600 mb-4">ข้อมูลบัญชีของคุณ</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <!-- โฟลเดอร์หลัก Google Drive -->
+                <div class="mb-2 md:mb-0">
+                    <div class="flex items-center mb-1">
+                        <svg class="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" stroke-width="2"
+                             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M3 7l3.6-2.4a1 1 0 011.4.2L9.6 7H20a1 1 0 011 1v11a1 1 0 01-1 1H4a1 1 0 01-1-1V7z" />
+                        </svg>
+                        <h4 class="font-bold text-gray-700">โฟลเดอร์หลัก Google Drive</h4>
+                    </div>
+                    <a id="googleFolderLink" href="#" target="_blank"
+                       class="text-blue-500 hover:underline text-sm md:text-base block truncate">
+                       เปิดโฟลเดอร์ RoomMeterApp
+                    </a>
+                    <p class="text-sm text-gray-500 mt-1">โฟลเดอร์หลักของแอปพลิเคชัน</p>
+                </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-    
-    <!-- โฟลเดอร์หลัก Google Drive -->
-    <div class="mb-2 md:mb-0">
-      <div class="flex items-center mb-1">
-        <!-- 📁 Icon -->
-        <svg class="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" stroke-width="2"
-             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round"
-                d="M3 7l3.6-2.4a1 1 0 011.4.2L9.6 7H20a1 1 0 011 1v11a1 1 0 01-1 1H4a1 1 0 01-1-1V7z" />
-        </svg>
-        <h4 class="font-bold text-gray-700">โฟลเดอร์หลัก Google Drive</h4>
-      </div>
-      <a id="googleFolderLink" href="#" target="_blank"
-         class="text-blue-500 hover:underline text-sm md:text-base block truncate">
-         เปิดโฟลเดอร์ RoomMeterApp
-      </a>
-      <p class="text-sm text-gray-500 mt-1">โฟลเดอร์หลักของแอปพลิเคชัน</p>
+                <!-- โฟลเดอร์รูปภาพ -->
+                <div class="mb-2 md:mb-0">
+                    <div class="flex items-center mb-1">
+                        <svg class="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" stroke-width="2"
+                             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M4 16l4-4a3 3 0 014 0l4 4m4-10v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2z" />
+                        </svg>
+                        <h4 class="font-bold text-gray-700">โฟลเดอร์รูปภาพ</h4>
+                    </div>
+                    <a id="googlePhotoFolderLink" href="#" target="_blank"
+                       class="text-blue-500 hover:underline text-sm md:text-base block truncate">
+                       เปิดโฟลเดอร์ RoomMeterPhoto
+                    </a>
+                    <p class="text-sm text-gray-500 mt-1">โฟลเดอร์นี้เก็บรูปภาพมิเตอร์ทั้งหมด</p>
+                </div>
+
+                <!-- Google Sheets -->
+                <div>
+                    <div class="flex items-center mb-1">
+                        <svg class="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" stroke-width="2"
+                             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M11 3H5a2 2 0 00-2 2v14a2 2 0 002 2h6m5-18h3a2 2 0 012 2v14a2 2 0 01-2 2h-3m0-18v18" />
+                        </svg>
+                        <h4 class="font-bold text-gray-700">Google Sheets</h4>
+                    </div>
+                    <a id="googleSheetLink" href="#" target="_blank"
+                       class="text-blue-500 hover:underline text-sm md:text-base block truncate">
+                       เปิด RoomMeterData
+                    </a>
+                    <p class="text-sm text-gray-500 mt-1">สเปรดชีตนี้เก็บข้อมูลเลขห้องและเลขมิเตอร์ทั้งหมด</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- เรียกใช้ไฟล์ JavaScript -->
+        <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/index.js') }}"></script>
     </div>
-
-    <!-- โฟลเดอร์รูปภาพ -->
-    <div class="mb-2 md:mb-0">
-      <div class="flex items-center mb-1">
-        <!-- 🖼️ Icon -->
-        <svg class="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" stroke-width="2"
-             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round"
-                d="M4 16l4-4a3 3 0 014 0l4 4m4-10v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2z" />
-        </svg>
-        <h4 class="font-bold text-gray-700">โฟลเดอร์รูปภาพ</h4>
-      </div>
-      <a id="googlePhotoFolderLink" href="#" target="_blank"
-         class="text-blue-500 hover:underline text-sm md:text-base block truncate">
-         เปิดโฟลเดอร์ RoomMeterPhoto
-      </a>
-      <p class="text-sm text-gray-500 mt-1">โฟลเดอร์นี้เก็บรูปภาพมิเตอร์ทั้งหมด</p>
-    </div>
-
-    <!-- Google Sheets -->
-    <div>
-      <div class="flex items-center mb-1">
-        <!-- 📊 Icon -->
-        <svg class="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" stroke-width="2"
-             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round"
-                d="M11 3H5a2 2 0 00-2 2v14a2 2 0 002 2h6m5-18h3a2 2 0 012 2v14a2 2 0 01-2 2h-3m0-18v18" />
-        </svg>
-        <h4 class="font-bold text-gray-700">Google Sheets</h4>
-      </div>
-      <a id="googleSheetLink" href="#" target="_blank"
-         class="text-blue-500 hover:underline text-sm md:text-base block truncate">
-         เปิด RoomMeterData
-      </a>
-      <p class="text-sm text-gray-500 mt-1">สเปรดชีตนี้เก็บข้อมูลเลขห้องและเลขมิเตอร์ทั้งหมด</p>
-    </div>
-
-  </div>
-</div>
-
-
-    <!-- เรียกใช้ไฟล์ JavaScript -->
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 </body>
 </html>

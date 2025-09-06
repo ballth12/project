@@ -10,14 +10,13 @@ from detector import ImageDetector
 from google_auth import create_flow, login_required, create_refresh_endpoint
 from google_api_client import GoogleAPIClient, create_user_resources
 from google_drive_handler import GoogleDriveHandler
+import inspect
 
 # โหลดตัวแปรจากไฟล์ .env สำหรับการพัฒนาในเครื่อง
 load_dotenv()
 
-# สร้าง Flask App โดยระบุที่ตั้งของโฟลเดอร์ static
-app = Flask(__name__, 
-           static_folder='static',
-           static_url_path='/static')
+# สร้าง Flask App
+app = Flask(__name__)
 
 @app.before_request
 def before_request():
@@ -44,7 +43,7 @@ detector = ImageDetector({
     'use_gpu': True
 })
 
-# *** เพิ่ม: ฟังก์ชันสำหรับลบไฟล์หลังจาก delay ***
+# ฟังก์ชันสำหรับลบไฟล์หลังจาก delay
 def schedule_file_cleanup(file_paths, delay_seconds=60):
     """
     กำหนดเวลาลบไฟล์หลังจาก delay_seconds วินาที
@@ -179,7 +178,7 @@ def callback():
         print(f"Error in callback: {e}")
         import traceback
         traceback.print_exc()
-        return f"เกิดข้อผิดพลาดในการล็อกอิน: {str(e)}"
+        return f"เกิดข้อผิดพลาดในการล็อกอิน"
 
 @app.route('/logout')
 def logout():
@@ -208,6 +207,7 @@ def get_user_info():
         # สร้าง URL สำหรับเปิด Sheets
         user_info['sheet_link'] = f"https://docs.google.com/spreadsheets/d/{session['sheet_id']}/edit"
     
+    print(user_info)
     return jsonify(user_info)
 
 @app.route('/uploads/<filename>')
@@ -395,5 +395,5 @@ def save_to_sheets():
 
 if __name__ == '__main__':
     # ใช้พอร์ตจากสภาพแวดล้อมถ้ามี มิฉะนั้นใช้พอร์ต 5000
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(debug=False, host='0.0.0.0', port=port, use_reloader=True)

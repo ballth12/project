@@ -33,13 +33,14 @@
 }
 
 .upload-main-text {
-    font-size: 1.125rem;
+    font-size: 1.25rem; /* เพิ่มจาก 1.125rem */
     color: #374151;
     margin-bottom: 0.5rem;
+    font-weight: 600;
 }
 
 .upload-sub-text {
-    font-size: 0.875rem;
+    font-size: 1rem; /* เพิ่มจาก 0.875rem */
     color: #6b7280;
 }
 
@@ -123,6 +124,7 @@ html.dark .upload-sub-text {
 
 .result-card {
     transition: all 0.3s ease;
+    padding: 2rem !important; /* เพิ่ม padding */
 }
 
 .result-card:hover {
@@ -130,15 +132,59 @@ html.dark .upload-sub-text {
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
-.hide {
-    display: none;
+.result-card h3 {
+    font-size: 1.5rem !important; /* เพิ่มขนาดหัวข้อ */
+    margin-bottom: 1.5rem !important;
 }
 
+.result-card h4 {
+    font-size: 1.25rem !important; /* เพิ่มขนาดหัวข้อย่อย */
+    margin-bottom: 0.75rem !important;
+    font-weight: 700 !important;
+}
+
+/* ปรับขนาดข้อความในส่วนข้อมูลที่ตรวจพบ */
+#roomNumberInput {
+    font-size: 2rem !important; /* เพิ่มจาก text-xl */
+    font-weight: 800 !important;
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+#fullMeterDisplay {
+    font-size: 2rem !important; /* เพิ่มจาก text-xl */
+    font-weight: 800 !important;
+    margin-bottom: 0.75rem !important;
+}
+
+#meterNumberInput,
+#decimalNumberInput {
+    font-size: 1.125rem !important; /* เพิ่มจาก text-sm */
+    font-weight: 600 !important;
+    padding: 0.5rem !important;
+    margin-bottom: 0.25rem !important;
+}
+
+/* ปรับขนาดข้อความความเชื่อมั่น */
+#roomConfidence,
+#meterConfidence,
+#decimalConfidence {
+    font-size: 1rem !important; /* เพิ่มจาก text-sm */
+    margin-top: 0.5rem !important;
+}
+
+/* ปรับขนาดข้อความเวลาที่ใช้ */
+#elapsedTime {
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+}
+
+/* ปรับขนาดข้อความสถานะการอัปโหลด */
 .badge {
     display: inline-block;
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem 0.75rem !important; /* เพิ่ม padding */
     border-radius: 9999px;
-    font-size: 0.75rem;
+    font-size: 0.875rem !important; /* เพิ่มจาก 0.75rem */
     font-weight: 600;
 }
 
@@ -157,8 +203,37 @@ html.dark .upload-sub-text {
     color: #1f2937;
 }
 
-#fileNameDisplay{
+/* ปรับขนาดลิงก์ Google Drive */
+#googleDriveLink {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+}
+
+/* ปรับขนาดข้อความในส่วนบันทึกข้อมูล */
+#saveContainer h3 {
+    font-size: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+#saveContainer p {
+    font-size: 1.125rem !important;
+    margin-bottom: 1rem !important;
+}
+
+#saveToSheetsButton {
+    font-size: 1.125rem !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 700 !important;
+}
+
+#fileNameDisplay {
     overflow-wrap: break-word;
+    font-size: 1rem !important; /* เพิ่มขนาด */
+    margin-top: 0.75rem !important;
+}
+
+.hide {
+    display: none;
 }
 
 .tooltip {
@@ -168,17 +243,18 @@ html.dark .upload-sub-text {
 
 .tooltip .tooltiptext {
     visibility: hidden;
-    width: 200px;
+    width: 250px; /* เพิ่มความกว้าง */
     background-color: #333;
     color: #fff;
     text-align: center;
     border-radius: 6px;
-    padding: 5px;
+    padding: 8px; /* เพิ่ม padding */
+    font-size: 0.875rem !important; /* เพิ่มขนาดฟอนต์ */
     position: absolute;
     z-index: 1;
     bottom: 125%;
     left: 50%;
-    margin-left: -100px;
+    margin-left: -125px; /* ปรับตาม width ใหม่ */
     opacity: 0;
     transition: opacity 0.3s;
 }
@@ -190,9 +266,35 @@ html.dark .upload-sub-text {
 
 /* สำหรับมือถือ - คำอธิบายเพิ่มเติม */
 @media (max-width: 768px) {
+    .result-card {
+        padding: 1.5rem !important;
+    }
+    
+    .result-card h3 {
+        font-size: 1.25rem !important;
+    }
+    
+    .result-card h4 {
+        font-size: 1.125rem !important;
+    }
+    
+    #roomNumberInput {
+        font-size: 1.5rem !important;
+    }
+    
+    #fullMeterDisplay {
+        font-size: 1.5rem !important;
+    }
+    
+    #meterNumberInput,
+    #decimalNumberInput {
+        font-size: 1rem !important;
+    }
+    
     .tooltip .tooltiptext {
-        width: 160px;
-        margin-left: -80px;
+        width: 200px;
+        margin-left: -100px;
+        font-size: 0.75rem !important;
     }
     
     .editable-number {
@@ -225,11 +327,16 @@ html.dark .upload-sub-text {
     }
     
     .upload-main-text {
-        font-size: 1rem;
+        font-size: 1.125rem; /* ปรับลดลงเล็กน้อยสำหรับมือถือ */
     }
     
     .upload-sub-text {
-        font-size: 0.75rem;
+        font-size: 0.875rem; /* ปรับลดลงเล็กน้อยสำหรับมือถือ */
+    }
+    
+    #saveToSheetsButton {
+        font-size: 1rem !important;
+        padding: 0.75rem 1.25rem !important;
     }
 }
 
@@ -243,5 +350,64 @@ html.dark .upload-sub-text {
     
     .upload-content {
         width: 100%;
+    }
+}
+
+/* แก้ไขการจัดเรียง header สำหรับมือถือ */
+@media (max-width: 768px) {
+    .header-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .header-title-section {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .header-user-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+    }
+    
+    .user-info {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .user-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .logout-btn {
+        flex-shrink: 0;
+    }
+    
+    .header-title {
+        font-size: 1.5rem !important;
+        line-height: 1.3;
+    }
+    
+    .header-subtitle {
+        font-size: 0.875rem !important;
+        line-height: 1.3;
+    }
+    
+    .user-name {
+        font-size: 0.875rem !important;
+        font-weight: 600;
+    }
+    
+    .user-email {
+        font-size: 0.75rem !important;
     }
 }

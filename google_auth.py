@@ -19,7 +19,7 @@ SCOPES = [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/drive',
     'https://www.googleapis.com/auth/spreadsheets',
-    'openid'  # เพิ่ม scope นี้
+    'openid'
 ]
 
 # รับ URL จากสภาพแวดล้อม หรือใช้ localhost เป็นค่าตั้งต้น
@@ -140,8 +140,8 @@ def login_required(f):
             # ถ้าไม่สามารถต่ออายุได้ ให้ล้าง session และ redirect ไป login
             session.clear()
             return redirect(url_for('login_page'))
-        
-        return f(*args, **kwargs)
+        result = f(*args, **kwargs)
+        return result
     return decorated_function
 
 # เพิ่ม API endpoint สำหรับ refresh token จาก frontend

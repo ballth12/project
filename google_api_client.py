@@ -27,6 +27,7 @@ class GoogleAPIClient:
         self.sheets_service = None
         self.credentials = None
         self.oauth_credentials_dict = oauth_credentials
+        print(self.oauth_credentials_dict)
         
         # ตรวจสอบว่าจะใช้ OAuth หรือ Service Account
         if oauth_credentials:
@@ -86,8 +87,8 @@ class GoogleAPIClient:
             elif not self.credentials.valid:
                 print("❌ Token is invalid but cannot refresh")
                 return False
-            # else:
-            #     print("✅ Token is still valid, no refresh needed")
+            else:
+                print("✅ Token is still valid, no refresh needed")
             
             return True
             
@@ -404,6 +405,7 @@ def create_user_resources(user_email):
             folder_id = folder.get('id')
             print(f"Created folder with ID: {folder_id}")
         else:
+            # ถ้ามีหลายโฟลเดอร์ชื่อเดียวกัน จะเลือกตัวแรก
             folder_id = items[0]['id']
             print(f"Found existing folder with ID: {folder_id}")
         
