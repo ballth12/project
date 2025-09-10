@@ -1,4 +1,4 @@
-// index.js - JavaScript สำหรับหน้า index (ปรับปรุงแล้ว - มี Token Refresh)
+// index.js - JavaScript สำหรับหน้า index
 
 document.addEventListener('DOMContentLoaded', function() {
     // ตัวแปร DOM elements
@@ -25,46 +25,25 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // สำหรับเก็บข้อมูลผลลัพธ์
     let resultData = null;
-
-    // *** เพิ่ม: Token Refresh System ***
-    let tokenRefreshInterval = null;
     
-    function startTokenRefresh() {
-        // ต่ออายุ token ทุก 45 นาที (3600 วินาที - 15 นาที buffer)
-        tokenRefreshInterval = setInterval(async () => {
-            try {
-                console.log('🔄 Attempting to refresh token...');
-                
-                const response = await fetch('/api/refresh-token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    console.log('✅ Token refreshed successfully');
-                } else {
-                    console.warn('⚠️ Token refresh failed:', data.message);
-                    
-                    // ถ้า refresh ไม่สำเร็จ ให้แสดงข้อความแจ้งเตือน
-                    if (data.redirect) {
-                        showAuthWarning('การเข้าสู่ระบบหมดอายุ กรุณาเข้าสู่ระบบใหม่');
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Error refreshing token:', error);
-            }
-        }, 45 * 60 * 1000); // 45 นาที
-    }
-    
-    function stopTokenRefresh() {
-        if (tokenRefreshInterval) {
-            clearInterval(tokenRefreshInterval);
-            tokenRefreshInterval = null;
-        }
+    function handleAuthError(errorData) {
+        console.warn('🔒 Authentication error detected:', errorData);
+        
+        // แสดงข้อความแจ้งเตือน
+        showAuthWarning(errorData.error || 'การเข้าสู่ระบบหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+        
+        // ปิดการใช้งานปุ่มที่ต้องใช้ authentication
+        processButton.disabled = true;
+        saveToSheetsButton.disabled = true;
+        
+        // เปลี่ยนข้อความปุ่ม
+        processButton.textContent = 'กรุณาเข้าสู่ระบบใหม่';
+        saveToSheetsButton.textContent = 'กรุณาเข้าสู่ระบบใหม่';
+        
+        // Redirect ไปหน้า login หลังจาก 3 วินาที
+        setTimeout(() => {
+            window.location.href = '/logout';
+        }, 3000);
     }
     
     function showAuthWarning(message) {
@@ -84,15 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="ml-3">
                         <p class="text-sm">${message}</p>
                         <p class="text-xs mt-1">
-                            <a href="/logout" class="underline">คลิกที่นี่เพื่อเข้าสู่ระบบใหม่</a>
+                            กำลังนำทางไปหน้าเข้าสู่ระบบใน 3 วินาที...
                         </p>
-                    </div>
-                    <div class="ml-auto pl-3">
-                        <button onclick="this.parentElement.parentElement.parentElement.style.display='none'" class="text-yellow-700 hover:text-yellow-800">
-                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
                     </div>
                 </div>
             `;
@@ -104,34 +76,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         warningBanner.style.display = 'block';
     }
-    
-    function handleAuthError(errorData) {
-        console.warn('🔒 Authentication error detected:', errorData);
-        
-        // หยุด token refresh
-        stopTokenRefresh();
-        
-        // แสดงข้อความแจ้งเตือน
-        showAuthWarning(errorData.error || 'การเข้าสู่ระบบหมดอายุ กรุณาเข้าสู่ระบบใหม่');
-        
-        // ปิดการใช้งานปุ่มที่ต้องใช้ authentication
-        processButton.disabled = true;
-        saveToSheetsButton.disabled = true;
-        
-        // เปลี่ยนข้อความปุ่ม
-        processButton.textContent = 'กรุณาเข้าสู่ระบบใหม่';
-        saveToSheetsButton.textContent = 'กรุณาเข้าสู่ระบบใหม่';
-    }
-    
-    // เริ่ม token refresh เมื่อโหลดหน้า
-    startTokenRefresh();
-    
-    // หยุด token refresh เมื่อปิดหน้า
-    window.addEventListener('beforeunload', stopTokenRefresh);
 
     // ดึงข้อมูลผู้ใช้จาก Flask Session
     fetch('/get_user_info')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch user info');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.name) {
                 document.getElementById('userName').textContent = data.name;
@@ -254,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
         saveErrorMessage.classList.add('hide');
     }
     
-    // ประมวลผล (ปรับปรุงแล้ว - มี Auth Error Handling)
+    // ประมวลผล
     processButton.addEventListener('click', function() {
         if (fileInput.files && fileInput.files[0]) {
             // แสดงการโหลด
@@ -298,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // แสดงผลลัพธ์
                 displayResults(data);
 
-                // *** ตรวจสอบเงื่อนไขใหม่: ต้องมีทั้งเลขห้องและเลขมิเตอร์ ***
+                // ตรวจสอบเงื่อนไขใหม่: ต้องมีทั้งเลขห้องและเลขมิเตอร์
                 if (data.can_upload && data.room_number && data.room_number.value && 
                     data.meter_number && data.meter_number.value) {
                     saveContainer.classList.remove('hide');
@@ -318,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // บันทึกลง Google Sheets (ปรับปรุงแล้ว - มี Auth Error Handling)
+    // บันทึกลง Google Sheets
     saveToSheetsButton.addEventListener('click', function() {
         if (!resultData || !resultData.can_upload) {
             alert('ไม่มีข้อมูลที่จะบันทึก หรือข้อมูลไม่ครบถ้วน (ต้องมีทั้งเลขห้องและเลขมิเตอร์)');
@@ -352,8 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
             decimal_number: decimalNumberInput.value.trim(),
             decimal_edited: decimalNumberInput.dataset.edited === 'true',
             full_meter: document.getElementById('fullMeterDisplay').textContent,
-            google_drive_link: resultData.google_drive_link,
-            processed_image_path: resultData.processed_image_path
+            google_drive_link: resultData.google_drive_link
         };
 
         // ส่ง request ไปยัง API
@@ -449,13 +401,11 @@ document.addEventListener('DOMContentLoaded', function() {
             roomNumberInput.value = data.room_number.value;
             roomNumberInput.dataset.originalValue = data.room_number.value;
             roomConfidenceElem.textContent = `ความเชื่อมั่น: ${(data.room_number.confidence * 100).toFixed(1)}%`;
-            // เปลี่ยนสีตัวอักษรเป็นเขียวเมื่อพบข้อมูล
             roomNumberInput.style.color = '#059669';
         } else {
             roomNumberInput.value = '';
             roomNumberInput.dataset.originalValue = '';
             roomConfidenceElem.textContent = 'ไม่พบข้อมูล';
-            // เปลี่ยนสีตัวอักษรเป็นแดงเมื่อไม่พบข้อมูล
             roomNumberInput.style.color = '#dc2626';
         }
         roomNumberInput.dataset.edited = 'false';
@@ -556,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadStatus.className = 'badge badge-error mr-2 mb-1 sm:mb-0';
             googleDriveLink.classList.add('hide');
         } else {
-            // *** กรณีที่ข้อมูลไม่ครับ - แสดงสถานะที่ชัดเจน ***
+            // กรณีที่ข้อมูลไม่ครบ - แสดงสถานะที่ชัดเจน
             googleDriveContainer.classList.remove('hide');
             googleDriveLink.href = '#';
             uploadStatus.textContent = 'ข้อมูลไม่ครบ - ไม่อัปโหลด';
@@ -596,47 +546,4 @@ document.addEventListener('DOMContentLoaded', function() {
         
         saveTooltip.textContent = tooltipText;
     }
-
-    // // *** เพิ่ม: Manual Token Refresh Button (สำหรับ debugging) ***
-    // if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    //     const debugPanel = document.createElement('div');
-    //     debugPanel.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #f0f0f0; padding: 10px; border-radius: 5px; z-index: 9999; font-size: 12px;';
-    //     debugPanel.innerHTML = `
-    //         <strong>Debug Panel</strong><br>
-    //         <button id="manualRefreshBtn" style="margin-top: 5px; padding: 5px 10px; background: #3b82f6; color: white; border: none; border-radius: 3px; cursor: pointer;">
-    //             Manual Token Refresh
-    //         </button>
-    //         <div id="tokenStatus" style="margin-top: 5px; font-size: 11px;">
-    //             Token Status: Unknown
-    //         </div>
-    //     `;
-    //     document.body.appendChild(debugPanel);
-        
-    //     document.getElementById('manualRefreshBtn').addEventListener('click', async () => {
-    //         const statusDiv = document.getElementById('tokenStatus');
-    //         statusDiv.textContent = 'Refreshing...';
-            
-    //         try {
-    //             const response = await fetch('/api/refresh-token', {
-    //                 method: 'POST',
-    //                 headers: {
-    //                     'Content-Type': 'application/json',
-    //                 }
-    //             });
-                
-    //             const data = await response.json();
-                
-    //             if (data.success) {
-    //                 statusDiv.textContent = 'Token Status: ✅ Refreshed';
-    //                 statusDiv.style.color = 'green';
-    //             } else {
-    //                 statusDiv.textContent = 'Token Status: ❌ Failed';
-    //                 statusDiv.style.color = 'red';
-    //             }
-    //         } catch (error) {
-    //             statusDiv.textContent = 'Token Status: ❌ Error';
-    //             statusDiv.style.color = 'red';
-    //         }
-    //     });
-    // }
 });

@@ -110,21 +110,21 @@ class ImageDetector:
         _, otsu = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         processed_images.append(("otsu", otsu))
         
-        # 8. เทรชโฮลด์แบบ Adaptive
-        adaptive_thresh = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-            cv2.THRESH_BINARY, 11, 2
-        )
-        processed_images.append(("adaptive", adaptive_thresh))
+        # # 8. เทรชโฮลด์แบบ Adaptive
+        # adaptive_thresh = cv2.adaptiveThreshold(
+        #     gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+        #     cv2.THRESH_BINARY, 11, 2
+        # )
+        # processed_images.append(("adaptive", adaptive_thresh))
         
-        # 9. เทรชโฮลด์แบบทั่วไป
-        _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
-        processed_images.append(("binary", binary))
+        # # 9. เทรชโฮลด์แบบทั่วไป
+        # _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+        # processed_images.append(("binary", binary))
         
-        # 10. ลบพื้นหลังและปรับคอนทราสต์
-        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-        _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        processed_images.append(("bg_removed", thresh))
+        # # 10. ลบพื้นหลังและปรับคอนทราสต์
+        # blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        # _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        # processed_images.append(("bg_removed", thresh))
         
         # 11. ลองหมุนภาพเล็กน้อยเพื่อแก้การเอียง
         for angle in [-3, -1, 1, 3]:
@@ -189,33 +189,33 @@ class ImageDetector:
         except Exception as e:
             pass
         
-        # ทดลอง 3: การตั้งค่าสำหรับตัวเลขที่ชัดเจน
-        try:
-            result3 = self.reader.readtext(
-                img, 
-                detail=1, 
-                allowlist='0123456789',
-                paragraph=False,
-                min_size=5,
-                text_threshold=0.7,
-                low_text=0.5,
-                link_threshold=0.5,
-                canvas_size=1280,
-                mag_ratio=4.0 if is_decimal else 1.0,  # ปรับ mag_ratio เฉพาะ decimal
-                slope_ths=0.2,
-                ycenter_ths=0.5,
-                height_ths=0.5,
-                width_ths=0.5,
-                add_margin=0.1,
-                x_ths=1.5,
-                y_ths=0.5
-            )
-            for detection in result3:
-                bbox, text, conf = detection
-                if conf > 0.15:
-                    ocr_results.append((text, conf, f"{img_name}_clear"))
-        except Exception as e:
-            pass
+        # # ทดลอง 3: การตั้งค่าสำหรับตัวเลขที่ชัดเจน
+        # try:
+        #     result3 = self.reader.readtext(
+        #         img, 
+        #         detail=1, 
+        #         allowlist='0123456789',
+        #         paragraph=False,
+        #         min_size=5,
+        #         text_threshold=0.7,
+        #         low_text=0.5,
+        #         link_threshold=0.5,
+        #         canvas_size=1280,
+        #         mag_ratio=4.0 if is_decimal else 1.0,  # ปรับ mag_ratio เฉพาะ decimal
+        #         slope_ths=0.2,
+        #         ycenter_ths=0.5,
+        #         height_ths=0.5,
+        #         width_ths=0.5,
+        #         add_margin=0.1,
+        #         x_ths=1.5,
+        #         y_ths=0.5
+        #     )
+        #     for detection in result3:
+        #         bbox, text, conf = detection
+        #         if conf > 0.15:
+        #             ocr_results.append((text, conf, f"{img_name}_clear"))
+        # except Exception as e:
+        #     pass
         
         # ทดลอง 4: การตั้งค่าสำหรับตัวเลขที่จางหรือเบลอ
         try:

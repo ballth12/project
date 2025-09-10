@@ -1,31 +1,20 @@
-# app.py
+# app.py - ส่วนหลักที่ปรับปรุงแล้ว
 from flask import Flask, request, render_template, jsonify, send_from_directory, redirect, session, url_for
 import os
 import time
 import uuid
-import secrets
 import threading
 from dotenv import load_dotenv
 from detector import ImageDetector
-from google_auth import create_flow, login_required, create_refresh_endpoint
+from google_auth import create_flow, login_required, handle_auth_error
 from google_api_client import GoogleAPIClient, create_user_resources
 from google_drive_handler import GoogleDriveHandler
-import inspect
 
 # โหลดตัวแปรจากไฟล์ .env สำหรับการพัฒนาในเครื่อง
 load_dotenv()
 
 # สร้าง Flask App
 app = Flask(__name__)
-
-@app.before_request
-def before_request():
-    # ในกรณีที่ใช้ Cloudflare หรือ proxy อื่นๆ
-    if request.headers.get('X-Forwarded-Proto') == 'http':
-        url = request.url.replace('http://', 'https://', 1)
-        return redirect(url, code=301)
-
-# กำหนดค่า Secret Key จาก environment variable หรือสร้างแบบสุ่ม
 app.secret_key = os.environ.get('SECRET_KEY')
 
 # สร้างโฟลเดอร์สำหรับเก็บไฟล์อัปโหลดชั่วคราว
@@ -37,7 +26,7 @@ os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 
-# สร้าง detector เพียงครั้งเดียวสำหรับทั้งแอป
+# สร้าง detector เพียงครั้งเดียว
 detector = ImageDetector({
     'model_path': 'bestMR.pt',
     'use_gpu': True
@@ -59,8 +48,6 @@ def schedule_file_cleanup(file_paths, delay_seconds=60):
                 if os.path.exists(file_path):
                     os.remove(file_path)
                     print(f"🧹 Cleaned up file: {file_path}")
-                else:
-                    print(f"⚠️ File not found for cleanup: {file_path}")
             except Exception as e:
                 print(f"❌ Error cleaning up file {file_path}: {e}")
     
@@ -68,9 +55,6 @@ def schedule_file_cleanup(file_paths, delay_seconds=60):
     cleanup_thread = threading.Thread(target=cleanup_files)
     cleanup_thread.daemon = True  # ทำให้ thread หยุดเมื่อโปรแกรมหลักหยุด
     cleanup_thread.start()
-
-# สร้าง refresh endpoint
-create_refresh_endpoint(app)
 
 @app.route('/')
 def index():
@@ -89,16 +73,14 @@ def auth():
     try:
         flow = create_flow()
         authorization_url, state = flow.authorization_url(
-            access_type='offline',  # สำคัญ: ต้องมีเพื่อให้ได้ refresh token
+            access_type='offline',
             include_granted_scopes='true',
-            prompt='consent'  # เพิ่มเพื่อให้แน่ใจว่าได้ refresh token
+            prompt='consent'
         )
         session['state'] = state
-        # เพิ่ม log สำหรับการแก้ไขปัญหา
         print(f"Redirecting to: {authorization_url}")
         return redirect(authorization_url)
     except Exception as e:
-        # เพิ่ม log ข้อผิดพลาด
         print(f"Error in auth(): {e}")
         return f"เกิดข้อผิดพลาดในการล็อกอิน: {str(e)}"
 
@@ -109,30 +91,18 @@ def callback():
         print(f"Callback URL: {request.url}")
         print(f"Headers: {request.headers}")
         
-        state = session.get('state')
-        
         flow = create_flow()
         
-        # แก้ไขเพื่อรองรับ Cloudflare
+        # รองรับ Cloudflare
         authorization_response = request.url
         if request.headers.get('X-Forwarded-Proto') == 'https' and 'http://' in authorization_response:
             authorization_response = authorization_response.replace('http://', 'https://', 1)
             print(f"Modified authorization_response: {authorization_response}")
         
-        flow.fetch_token(
-            authorization_response=authorization_response,
-            include_granted_scopes=True
-        )
-        
+        flow.fetch_token(authorization_response=authorization_response)
         credentials = flow.credentials
         
-        # *** สำคัญ: ตรวจสอบว่าได้ refresh_token หรือไม่ ***
-        if not credentials.refresh_token:
-            print("Warning: No refresh token received. This may cause issues later.")
-        else:
-            print("✅ Refresh token received successfully")
-        
-        # เก็บ credentials ครบถ้วนลงใน session
+        # เก็บ credentials ลงใน session
         session['credentials'] = {
             'token': credentials.token,
             'refresh_token': credentials.refresh_token,
@@ -141,14 +111,13 @@ def callback():
             'client_secret': credentials.client_secret,
             'scopes': credentials.scopes
         }
+        session.permanent = True
         
-        # เพิ่มเวลาที่สร้าง credentials
-        session['credentials_created_at'] = time.time()
-        
-        # กำหนดค่าเริ่มต้นสำหรับข้อมูลผู้ใช้
+        # ตั้งค่าข้อมูลผู้ใช้เริ่มต้น
         session['user_email'] = 'default_user@example.com'
         session['user_name'] = 'Default User'
         
+        # พยายามดึงข้อมูลผู้ใช้จาก People API
         try:
             # พยายามใช้ People API ถ้าเป็นไปได้
             from google.oauth2.credentials import Credentials
@@ -166,19 +135,16 @@ def callback():
             
             if 'names' in profile:
                 session['user_name'] = profile['names'][0]['displayName']
-        except Exception as people_error:
-            print(f"Warning: Could not fetch user profile: {people_error}")
-            # ทำงานต่อไปแม้ว่าจะไม่สามารถดึงข้อมูลผู้ใช้ได้
+        except Exception:
+            pass  # ใช้ค่าเริ่มต้นถ้าดึงไม่ได้
         
         # สร้างโฟลเดอร์และ Sheets สำหรับผู้ใช้
-        folder_id, sheet_id = create_user_resources(session.get('user_email', 'unknown'))
+        create_user_resources(session.get('user_email', 'unknown'))
         
         return redirect(url_for('index'))
     except Exception as e:
         print(f"Error in callback: {e}")
-        import traceback
-        traceback.print_exc()
-        return f"เกิดข้อผิดพลาดในการล็อกอิน"
+        return f"เกิดข้อผิดพลาดในการล็อกอิน: {str(e)}"
 
 @app.route('/logout')
 def logout():
@@ -205,53 +171,19 @@ def get_user_info():
     
     if 'sheet_id' in session:
         # สร้าง URL สำหรับเปิด Sheets
-        user_info['sheet_link'] = f"https://docs.google.com/spreadsheets/d/{session['sheet_id']}/edit"
+        user_info['sheet_link'] = f"https://docs.google.com/spreadsheets/d/{session['sheet_id']}/?gid={session['data_sheet_id']}#gid={session['data_sheet_id']}"
     
-    print(user_info)
     return jsonify(user_info)
-
-@app.route('/uploads/<filename>')
-@login_required
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/processed/<filename>')
 @login_required
 def processed_file(filename):
+    """ส่งไฟล์รูปที่ประมวลผลแล้ว"""
     return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
-
-def create_google_client_with_session_update():
-    """
-    สร้าง GoogleAPIClient และอัปเดต session หาก credentials ถูกต่ออายุ
-    """
-    print(f"📊 Session before: {session.get('credentials', {}).get('token', 'None')[:20]}...")
-    
-    # เก็บ token เดิมไว้เปรียบเทียบ
-    old_token = session.get('credentials', {}).get('token', '')
-    
-    google_client = GoogleAPIClient(oauth_credentials=session['credentials'])
-    
-    # ตรวจสอบว่า credentials ถูกอัปเดตหรือไม่
-    updated_credentials = google_client.get_updated_credentials()
-    if updated_credentials:
-        new_token = updated_credentials.get('token', '')
-        
-        # เปรียบเทียบ token - update เฉพาะเมื่อ token เปลี่ยน
-        if old_token != new_token:
-            print(f"📊 Session after: {new_token[:20]}...")
-            session['credentials'] = updated_credentials
-            session.permanent = True
-            session['credentials_refreshed_at'] = time.time()
-            print("✅ Session updated with refreshed credentials")
-        else:
-            print("ℹ️ Token unchanged, no session update needed")
-    else:
-        print("ℹ️ No credentials update needed")
-    
-    return google_client
 
 @app.route('/process', methods=['POST'])
 @login_required
+@handle_auth_error
 def process():
     if 'file' not in request.files:
         return jsonify({'error': 'ไม่พบไฟล์ในการอัปโหลด'})
@@ -274,26 +206,18 @@ def process():
         try:
             results = detector.process_image(file_path, app.config['PROCESSED_FOLDER'])
             
-            # *** รวบรวมไฟล์ที่ต้องลบ ***
-            files_to_cleanup = [file_path]  # ไฟล์ต้นฉบับที่อัปโหลด
-            
-            if results.get('processed_image_path') and os.path.exists(results['processed_image_path']):
-                files_to_cleanup.append(results['processed_image_path'])  # ไฟล์ภาพที่ประมวลผลแล้ว
+            files_to_cleanup = [file_path]
+            if results.get('processed_image_path'):
+                files_to_cleanup.append(results['processed_image_path'])
             
             # *** อัปโหลดไปยัง Google Drive เฉพาะเมื่อ can_upload = True ***
             # (ซึ่งหมายความว่าต้องเจอทั้งเลขห้องและเลขมิเตอร์)
             if results['can_upload'] and 'credentials' in session:
                 try:
-                    # สร้าง GoogleAPIClient พร้อมอัปเดต session
-                    google_client = create_google_client_with_session_update()
-                    
-                    # *** ใช้ชื่อไฟล์แบบสุ่ม (UUID) ***
-                    random_filename = temp_filename  
-                    
-                    # อัปโหลดไฟล์ไปยัง Google Drive
+                    google_client = GoogleAPIClient()
                     file_info = GoogleDriveHandler.upload_to_drive(
                         results['processed_image_path'], 
-                        random_filename,
+                        temp_filename,
                         session, 
                         google_client
                     )
@@ -301,24 +225,19 @@ def process():
                     if file_info:
                         # เก็บลิงก์ไฟล์ไว้ในผลลัพธ์
                         results['google_drive_link'] = file_info.get('webViewLink')
-                        results['uploaded_filename'] = random_filename
-                        print(f"✅ อัปโหลดภาพสำเร็จ: {random_filename}")
+                        results['uploaded_filename'] = temp_filename
+                        print(f"✅ อัปโหลดภาพสำเร็จ: {temp_filename}")
                     
                 except Exception as e:
                     print(f"❌ ไม่สามารถอัปโหลดไฟล์ไปยัง Google Drive: {str(e)}")
-                    # ตรวจสอบว่าเป็น auth error หรือไม่
-                    if "credentials" in str(e).lower() or "authorization" in str(e).lower():
-                        results['auth_error'] = True
-                        results['error_message'] = "การเข้าสู่ระบบหมดอายุ กรุณาเข้าสู่ระบบใหม่"
-            else:
-                if not results['can_upload']:
-                    print("⚠️  ไม่อัปโหลดภาพเนื่องจากข้อมูลไม่ครบถ้วน (ต้องเจอทั้งเลขห้องและเลขมิเตอร์)")
+                    # ไม่ throw error - ให้ผู้ใช้ดำเนินการต่อได้
             
             # *** กำหนดเวลาลบไฟล์หลังจาก 60 วินาที ***
             schedule_file_cleanup(files_to_cleanup, delay_seconds=60)
             print(f"⏰ Scheduled cleanup for {len(files_to_cleanup)} files in 60 seconds")
             
             return jsonify(results)
+            
         except Exception as e:
             # ลบไฟล์ทันทีถ้าเกิดข้อผิดพลาด
             try:
@@ -331,6 +250,7 @@ def process():
 
 @app.route('/save-to-sheets', methods=['POST'])
 @login_required
+@handle_auth_error
 def save_to_sheets():
     try:
         # รับข้อมูลจาก frontend
@@ -373,8 +293,8 @@ def save_to_sheets():
             google_drive_link
         ]
 
-        # สร้าง GoogleAPIClient พร้อมอัปเดต session และบันทึกข้อมูล
-        google_client = create_google_client_with_session_update()
+        # บันทึกข้อมูล
+        google_client = GoogleAPIClient()
         result = GoogleDriveHandler.save_to_sheets(sheet_data, session, google_client)
 
         if result:
@@ -394,6 +314,6 @@ def save_to_sheets():
         return jsonify({'error': f'เกิดข้อผิดพลาดในการบันทึกข้อมูล: {str(e)}'})
 
 if __name__ == '__main__':
-    # ใช้พอร์ตจากสภาพแวดล้อมถ้ามี มิฉะนั้นใช้พอร์ต 5000
+    # ใช้พอร์ตจากสภาพแวดล้อมถ้ามี มิฉะนั้นใช้พอร์ต 8080
     port = int(os.environ.get("PORT", 8080))
     app.run(debug=False, host='0.0.0.0', port=port, use_reloader=True)
