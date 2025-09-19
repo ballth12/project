@@ -22,9 +22,51 @@ document.addEventListener('DOMContentLoaded', function() {
     const googleDriveLink = document.getElementById('googleDriveLink');
     const uploadStatus = document.getElementById('uploadStatus');
     const saveTooltip = document.getElementById('saveTooltip');
+
+    // ตัวแปรสำหรับ mobile modal
+    const mobileUploadModal = document.getElementById('mobileUploadModal');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const closeModal = document.getElementById('closeModal');
+    const cameraOption = document.getElementById('cameraOption');
+    const galleryOption = document.getElementById('galleryOption');
     
     // สำหรับเก็บข้อมูลผลลัพธ์
     let resultData = null;
+
+    // ฟังก์ชันตรวจสอบว่าเป็นอุปกรณ์มือถือหรือไม่
+    function isMobileDevice() {
+        return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // ฟังก์ชันเปิด modal
+    function showMobileModal() {
+        mobileUploadModal.classList.remove('hide');
+        mobileUploadModal.classList.add('show');
+        document.body.style.overflow = 'hidden'; // ป้องกันการ scroll หลัง modal
+    }
+
+    // ฟังก์ชันปิด modal
+    function hideMobileModal() {
+        mobileUploadModal.classList.remove('show');
+        mobileUploadModal.classList.add('hide');
+        document.body.style.overflow = ''; // คืนค่าการ scroll
+    }
+
+    // ฟังก์ชันเปิดไฟล์ input สำหรับกล้อง
+    function openCamera() {
+        fileInput.setAttribute('capture', 'environment');
+        fileInput.setAttribute('accept', 'image/*');
+        fileInput.click();
+        hideMobileModal();
+    }
+
+    // ฟังก์ชันเปิดไฟล์ input สำหรับแกลเลอรี่
+    function openGallery() {
+        fileInput.removeAttribute('capture');
+        fileInput.setAttribute('accept', 'image/*');
+        fileInput.click();
+        hideMobileModal();
+    }
     
     function handleAuthError(errorData) {
         console.warn('🔒 Authentication error detected:', errorData);
@@ -106,10 +148,65 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error fetching user info:', error);
         });
 
-    // Upload area click event
-    uploadArea.addEventListener('click', function() {
-        fileInput.click();
+    // Upload area click event - แก้ไขให้รองรับ mobile modal
+    uploadArea.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Upload area clicked, isMobile:', isMobileDevice());
+        
+        if (isMobileDevice()) {
+            showMobileModal();
+        } else {
+            fileInput.click();
+        }
     });
+
+    // Event listeners สำหรับ mobile modal
+    if (closeModal) {
+        closeModal.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            hideMobileModal();
+        });
+    }
+
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            hideMobileModal();
+        });
+    }
+
+    if (cameraOption) {
+        cameraOption.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openCamera();
+        });
+    }
+
+    if (galleryOption) {
+        galleryOption.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openGallery();
+        });
+    }
+
+    // ปิด modal เมื่อกด ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && mobileUploadModal && mobileUploadModal.classList.contains('show')) {
+            e.preventDefault();
+            hideMobileModal();
+        }
+    });
+
+    // ป้องกันการ scroll เมื่อ modal เปิดอยู่
+    if (mobileUploadModal) {
+        mobileUploadModal.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+    }
 
     // Drag & Drop events
     uploadArea.addEventListener('dragover', function(e) {

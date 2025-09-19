@@ -44,11 +44,13 @@ client_secret.json
 # Generated files
 uploads/
 processed/
-data-test/
+data-test*/
 metertest*/
 ocr_reports*/
 accuracy_reports*/
 test*.py
+read*.py
+detector copy*.py
 
 # Model files
 # *.pt
@@ -62,6 +64,7 @@ Thumbs.db
 *.bak
 *.swp
 *.md
+*.puml
 
 # Heroku
 .slug-post-clean
