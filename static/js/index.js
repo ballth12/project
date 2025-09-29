@@ -1,4 +1,4 @@
-// index.js - JavaScript สำหรับหน้า index
+// index.js - JavaScript สำหรับหน้า index พร้อมการเปลี่ยนสีเมื่อแก้ไข
 
 document.addEventListener('DOMContentLoaded', function() {
     // ตัวแปร DOM elements
@@ -117,6 +117,79 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         warningBanner.style.display = 'block';
+    }
+
+    // ✨ ฟังก์ชันสำหรับการเปลี่ยนสีเมื่อแก้ไขข้อมูล
+    function updateInputStyle(inputElement, isEdited) {
+        if (isEdited) {
+            // ถ้าแก้ไขแล้ว - ใช้สีส้ม
+            inputElement.style.color = '#ea580c'; // Orange-600
+            inputElement.style.borderBottomColor = '#ea580c';
+            inputElement.classList.add('edited');
+        } else {
+            // ถ้าไม่ได้แก้ไข - ใช้สีเขียว
+            inputElement.style.color = '#059669'; // Green-600
+            inputElement.style.borderBottomColor = '#d1d5db'; // Gray-300
+            inputElement.classList.remove('edited');
+        }
+    }
+
+    // ✨ ฟังก์ชันสำหรับอัพเดท full meter display เมื่อมีการแก้ไข
+    function updateFullMeterDisplayColor() {
+        const fullMeterDisplayElem = document.getElementById('fullMeterDisplay');
+        const meterNumberInput = document.getElementById('meterNumberInput');
+        const decimalNumberInput = document.getElementById('decimalNumberInput');
+        
+        const meterEdited = meterNumberInput.dataset.edited === 'true';
+        const decimalEdited = decimalNumberInput.dataset.edited === 'true';
+        
+        // ถ้ามีการแก้ไขอย่างใดอย่างหนึ่ง ให้เปลี่ยนเป็นสีส้ม
+        if (meterEdited || decimalEdited) {
+            fullMeterDisplayElem.style.color = '#ea580c'; // Orange-600
+        } else {
+            fullMeterDisplayElem.style.color = '#059669'; // Green-600
+        }
+    }
+
+    // ✨ ฟังก์ชันสำหรับเพิ่ม event listeners ให้กับ input ที่แก้ไขได้
+    function setupEditableInputs() {
+        const editableInputs = document.querySelectorAll('.editable-number');
+        
+        editableInputs.forEach(input => {
+            // เพิ่ม event listener สำหรับการพิมพ์
+            input.addEventListener('input', function() {
+                const originalValue = this.dataset.originalValue || '';
+                const currentValue = this.value.trim();
+                const isEdited = currentValue !== originalValue;
+                
+                // อัพเดทสถานะการแก้ไข
+                this.dataset.edited = isEdited ? 'true' : 'false';
+                
+                // เปลี่ยนสีของ input
+                updateInputStyle(this, isEdited);
+                
+                // อัพเดท full meter display ถ้าเป็น meter หรือ decimal input
+                if (this.id === 'meterNumberInput' || this.id === 'decimalNumberInput') {
+                    updateFullMeterDisplay();
+                    updateFullMeterDisplayColor();
+                }
+            });
+            
+            // เพิ่ม event listener สำหรับการ focus
+            input.addEventListener('focus', function() {
+                this.style.borderBottomColor = '#3b82f6'; // Blue-500
+            });
+            
+            // เพิ่ม event listener สำหรับการ blur
+            input.addEventListener('blur', function() {
+                const isEdited = this.dataset.edited === 'true';
+                if (isEdited) {
+                    this.style.borderBottomColor = '#ea580c'; // Orange-600
+                } else {
+                    this.style.borderBottomColor = '#d1d5db'; // Gray-300
+                }
+            });
+        });
     }
 
     // ดึงข้อมูลผู้ใช้จาก Flask Session
@@ -498,12 +571,12 @@ document.addEventListener('DOMContentLoaded', function() {
             roomNumberInput.value = data.room_number.value;
             roomNumberInput.dataset.originalValue = data.room_number.value;
             roomConfidenceElem.textContent = `ความเชื่อมั่น: ${(data.room_number.confidence * 100).toFixed(1)}%`;
-            roomNumberInput.style.color = '#059669';
+            updateInputStyle(roomNumberInput, false); // ตั้งค่าเป็นสีเขียว (ไม่ได้แก้ไข)
         } else {
             roomNumberInput.value = '';
             roomNumberInput.dataset.originalValue = '';
             roomConfidenceElem.textContent = 'ไม่พบข้อมูล';
-            roomNumberInput.style.color = '#dc2626';
+            roomNumberInput.style.color = '#dc2626'; // สีแดงสำหรับข้อมูลที่ไม่พบ
         }
         roomNumberInput.dataset.edited = 'false';
 
@@ -528,12 +601,12 @@ document.addEventListener('DOMContentLoaded', function() {
             meterNumberInput.value = data.meter_number.value;
             meterNumberInput.dataset.originalValue = data.meter_number.value;
             meterConfidenceElem.textContent = `ความเชื่อมั่น: ${(data.meter_number.confidence * 100).toFixed(1)}%`;
-            meterNumberInput.style.color = '#059669';
+            updateInputStyle(meterNumberInput, false); // ตั้งค่าเป็นสีเขียว (ไม่ได้แก้ไข)
         } else {
             meterNumberInput.value = '';
             meterNumberInput.dataset.originalValue = '';
             meterConfidenceElem.textContent = 'ไม่พบข้อมูล';
-            meterNumberInput.style.color = '#dc2626';
+            meterNumberInput.style.color = '#dc2626'; // สีแดงสำหรับข้อมูลที่ไม่พบ
         }
         meterNumberInput.dataset.edited = 'false';
 
@@ -542,14 +615,17 @@ document.addEventListener('DOMContentLoaded', function() {
             decimalNumberInput.value = data.decimal_number.value;
             decimalNumberInput.dataset.originalValue = data.decimal_number.value;
             decimalConfidenceElem.textContent = `ความเชื่อมั่น: ${(data.decimal_number.confidence * 100).toFixed(1)}%`;
-            decimalNumberInput.style.color = '#059669';
+            updateInputStyle(decimalNumberInput, false); // ตั้งค่าเป็นสีเขียว (ไม่ได้แก้ไข)
         } else {
             decimalNumberInput.value = '';
             decimalNumberInput.dataset.originalValue = '';
             decimalConfidenceElem.textContent = 'ไม่พบข้อมูล';
-            decimalNumberInput.style.color = '#6b7280';
+            decimalNumberInput.style.color = '#6b7280'; // สีเทาสำหรับข้อมูลที่ไม่มี
         }
         decimalNumberInput.dataset.edited = 'false';
+
+        // ✨ ตั้งค่า event listeners สำหรับการแก้ไข (ต้องทำหลังจากแสดงผลลัพธ์)
+        setupEditableInputs();
 
         // Update full meter display when meter or decimal inputs change
         const updateFullMeterDisplay = () => {
@@ -557,29 +633,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const decimalValue = decimalNumberInput.value.trim();
             if (meterValue && decimalValue) {
                 fullMeterDisplayElem.textContent = `${meterValue}.${decimalValue}`;
-                fullMeterDisplayElem.style.color = '#059669';
             } else if (meterValue) {
                 fullMeterDisplayElem.textContent = meterValue;
-                fullMeterDisplayElem.style.color = '#059669';
             } else {
                 fullMeterDisplayElem.textContent = 'ไม่พบข้อมูลครบถ้วน';
                 fullMeterDisplayElem.style.color = '#dc2626';
+                return; // ออกจากฟังก์ชันเพื่อไม่ให้เปลี่ยนสีในขั้นตอนถัดไป
             }
+            
+            // อัพเดทสีของ full meter display
+            updateFullMeterDisplayColor();
         };
 
         meterNumberInput.addEventListener('input', updateFullMeterDisplay);
         decimalNumberInput.addEventListener('input', updateFullMeterDisplay);
-
-        // Add event listeners to track edits
-        document.querySelectorAll('.editable-number').forEach(input => {
-            input.addEventListener('input', function() {
-                if (this.value !== this.dataset.originalValue) {
-                    this.dataset.edited = 'true';
-                } else {
-                    this.dataset.edited = 'false';
-                }
-            });
-        });
         
         // เวลาที่ใช้
         document.getElementById('elapsedTime').textContent = `${data.elapsed_time.toFixed(2)} วินาที`;

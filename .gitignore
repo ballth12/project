@@ -48,6 +48,7 @@ data-test*/
 metertest*/
 ocr_reports*/
 accuracy_reports*/
+testM_reports*/
 test*.py
 read*.py
 detector copy*.py

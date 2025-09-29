@@ -328,10 +328,14 @@ class ImageDetector:
                         expected_lengths = self.EXPECTED_METER_LENGTH
                     elif class_name == 'meter1':
                         expected_lengths = self.EXPECTED_DECIMAL_LENGTH
-                    
+                    start_time = time.time()
                     # ประมวลผลภาพหลายรูปแบบ
                     processed_images = self.preprocess_for_ocr(cropped_img, class_name)
-                    
+                    end_time = time.time()
+                    IMG_Time = end_time - start_time
+                    print(f"IMG Time{IMG_Time}")
+
+                    start_time = time.time()
                     # ทำ OCR แบบขนาน
                     all_ocr_results = []
                     with ThreadPoolExecutor(max_workers=4) as executor:
@@ -341,7 +345,9 @@ class ImageDetector:
                             ocr_results = future.result()
                             if ocr_results:
                                 all_ocr_results.extend(ocr_results)
-                    
+                    end_time = time.time()
+                    OCR_Time = end_time - start_time
+                    print(f"OCR Time{OCR_Time}")
                     # เลือกผลลัพธ์ที่ดีที่สุด
                     best_result_data = self.filter_and_select_best_result(
                         all_ocr_results, expected_lengths)
@@ -574,7 +580,7 @@ class ImageDetector:
         best_pair = self.find_best_pairs_unified(detections_by_class)
         print(best_pair)
 
-        if best_pair['pairing_method'] == 'proximity_matching':
+        if best_pair and best_pair['pairing_method'] == 'proximity_matching':
             # เก็บผลลัพธ์เฉพาะกรณีที่มีทั้งเลขห้องและมิเตอร์
             results_dict['room_number'] = {
                 "value": best_pair['room']['number'], 
@@ -624,7 +630,7 @@ class ImageDetector:
             print("❌ ไม่สามารถบันทึกได้ - ต้องเจอทั้งเลขห้องและเลขมิเตอร์")
             
             # เก็บข้อมูลที่พบแม้ไม่ครบถ้วน
-            if best_pair['room']:
+            if best_pair and best_pair['room']:
                 best_room = best_pair['room']
                 results_dict['room_number'] = {
                     "value": best_room['number'], 
@@ -635,7 +641,7 @@ class ImageDetector:
             else:
                 print("   ไม่พบเลขห้อง")
                 
-            if best_pair['meter']:
+            if best_pair and best_pair['meter']:
                 best_meter = best_pair['meter']
                 results_dict['meter_number'] = {
                     "value": best_meter['number'], 
@@ -662,7 +668,7 @@ class ImageDetector:
                 print("   ไม่พบเลขมิเตอร์")
                 
             # เก็บข้อมูลทศนิยมแม้ไม่มีมิเตอร์ (กรณีพิเศษ)
-            if best_pair['decimal']:
+            if best_pair and best_pair['decimal']:
                 best_decimal = best_pair['decimal']
                 results_dict['decimal_number'] = {
                     "value": best_decimal['number'], 
