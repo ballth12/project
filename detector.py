@@ -388,6 +388,10 @@ class ImageDetector:
         room_detections = detections_by_class['roomN']
         meter_detections = detections_by_class['meter']
         decimal_detections = detections_by_class['meter1']
+
+        if meter_detections and not decimal_detections:
+            print("⚠️ พบ meter แต่ไม่พบ decimal - ไม่นับค่า meter")
+            meter_detections = []  # ล้างค่า meter
         
         # กรณีที่มีทั้งเลขห้องและมิเตอร์ - ใช้ proximity matching
         if room_detections and meter_detections:
