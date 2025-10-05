@@ -28,7 +28,7 @@ app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 
 # สร้าง detector เพียงครั้งเดียว
 detector = ImageDetector({
-    'model_path': 'bestMR.pt',
+    'model_path': 'bestMR2.pt',
     'use_gpu': True
 })
 

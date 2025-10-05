@@ -20,7 +20,7 @@ class ImageDetector:
         """
         if models_config is None:
             models_config = {
-                'model_path': 'bestMR.pt',  # เปลี่ยนเป็น model เดียว
+                'model_path': 'bestMR2.pt',  # เปลี่ยนเป็น model เดียว
                 'use_gpu': True
             }
         
@@ -347,6 +347,7 @@ class ImageDetector:
                                 all_ocr_results.extend(ocr_results)
                     end_time = time.time()
                     OCR_Time = end_time - start_time
+                    print(all_ocr_results)
                     print(f"OCR Time{OCR_Time}")
                     # เลือกผลลัพธ์ที่ดีที่สุด
                     best_result_data = self.filter_and_select_best_result(
@@ -420,14 +421,14 @@ class ImageDetector:
                     distance_score = max(0, 1000 - distance) / 1000
                     
                     # คะแนนจาก confidence
-                    room_conf_score = room['confidence'] * 0.3 + room['detection_confidence'] * 0.2
-                    meter_conf_score = meter['confidence'] * 0.3 + meter['detection_confidence'] * 0.2
+                    room_conf_score = room['confidence'] * 0.6 + room['detection_confidence'] * 0.4
+                    meter_conf_score = meter['confidence'] * 0.6 + meter['detection_confidence'] * 0.4
                     # print(f"{distance_score}")
                     # print(f"{room_conf_score}")
                     # print(f"{meter_conf_score}")
                     
                     # คะแนนรวม
-                    total_score = distance_score * 0.4 + room_conf_score + meter_conf_score
+                    total_score = distance_score * 0.4 + room_conf_score * 0.3 + meter_conf_score * 0.3
                     # print(min_decimal_distance)
                     
                     # เพิ่มคะแนนถ้ามีเลขทศนิยมที่ใกล้
@@ -461,14 +462,14 @@ class ImageDetector:
         # เลือกเลขห้องที่ดีที่สุด (ถ้ามี)
         if room_detections:
             best_room = max(room_detections, 
-                        key=lambda x: x['confidence'] * 0.7 + x['detection_confidence'] * 0.3)
+                        key=lambda x: x['confidence'] * 0.6 + x['detection_confidence'] * 0.4)
             result['room'] = best_room
             result['score'] += best_room['confidence'] * 0.3
         
         # เลือกเลขมิเตอร์ที่ดีที่สุด (ถ้ามี)
         if meter_detections:
             best_meter = max(meter_detections, 
-                            key=lambda x: x['confidence'] * 0.7 + x['detection_confidence'] * 0.3)
+                            key=lambda x: x['confidence'] * 0.6 + x['detection_confidence'] * 0.4)
             result['meter'] = best_meter
             result['score'] += best_meter['confidence'] * 0.3
             
