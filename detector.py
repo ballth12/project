@@ -20,7 +20,7 @@ class ImageDetector:
         """
         if models_config is None:
             models_config = {
-                'model_path': 'bestMR2.pt',  # เปลี่ยนเป็น model เดียว
+                'model_path': 'bestMR.pt',  # เปลี่ยนเป็น model เดียว
                 'use_gpu': True
             }
         
@@ -269,30 +269,40 @@ class ImageDetector:
         text_frequency = {}
         for text, conf, method in valid_results:
             if text not in text_frequency:
-                text_frequency[text] = {'count': 0, 'max_conf': 0, 'method': method}
+                text_frequency[text] = {
+                    'count': 0, 
+                    'conf_sum': 0,  # เก็บผลรวม confidence
+                    'conf_list': [],  # เก็บ confidence ทั้งหมดสำหรับคำนวณค่าเฉลี่ย
+                    'method': method
+                }
             text_frequency[text]['count'] += 1
-            if text_frequency[text]['max_conf'] < conf:   
-                text_frequency[text]['max_conf'] = conf
+            text_frequency[text]['conf_sum'] += conf
+            text_frequency[text]['conf_list'].append(conf)
+            # เก็บ method ของ confidence สูงสุด
+            if conf > max(text_frequency[text]['conf_list'][:-1], default=0):
                 text_frequency[text]['method'] = method
         
         # เลือกตัวเลขที่พบบ่อยที่สุดและมี confidence สูง
         best_text = None
         best_score = 0
         best_method = None
-        best_conf = 0
+        best_avg_conf = 0
         
         for text, info in text_frequency.items():
-            # คะแนน = (ความถี่ * 0.3) + (confidence * 0.7)
-            score = (info['count'] * 0.3) + (info['max_conf'] * 0.7)
+            # คำนวณค่าเฉลี่ย confidence
+            avg_conf = info['conf_sum'] / info['count']
+            
+            # คะแนน = (ความถี่ * 0.3) + (avg_confidence * 0.7)
+            score = (info['count'] * 0.2) + (avg_conf * 0.8)
             
             if score > best_score:
                 best_score = score
                 best_text = text
                 best_method = info['method']
-                best_conf = info['max_conf']
+                best_avg_conf = avg_conf
         
         if best_text:
-            return (best_text, best_conf, best_method)
+            return (best_text, best_avg_conf, best_method)
         
         return None
 
@@ -318,8 +328,8 @@ class ImageDetector:
                     x1, y1, x2, y2 = map(int, box)
                     cropped_img = img[y1:y2, x1:x2]
                     
-                    if cropped_img.shape[0] < 15 or cropped_img.shape[1] < 15:
-                        continue
+                    # if cropped_img.shape[0] < 15 or cropped_img.shape[1] < 15:
+                    #     continue
                     
                     # กำหนดพารามิเตอร์สำหรับแต่ละ class
                     if class_name == 'roomN':
