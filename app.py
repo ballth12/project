@@ -78,6 +78,7 @@ def auth():
             prompt='consent'
         )
         session['state'] = state
+        session['code_verifier'] = flow.code_verifier
         print(f"Redirecting to: {authorization_url}")
         return redirect(authorization_url)
     except Exception as e:
@@ -92,6 +93,7 @@ def callback():
         print(f"Headers: {request.headers}")
         
         flow = create_flow()
+        flow.code_verifier = session.get('code_verifier')
         
         # รองรับ Cloudflare
         authorization_response = request.url

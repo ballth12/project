@@ -33,6 +33,7 @@ env/
 
 # Local development settings
 .env
+.venv
 .vscode/
 .idea/
 
@@ -65,6 +66,7 @@ Thumbs.db
 *.bak
 *.swp
 *.md
+!GEMINI.md
 *.puml
 
 # Heroku
