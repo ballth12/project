@@ -2,7 +2,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/flask-3.1.3-green.svg)](https://flask.palletsprojects.com/)
-[![YOLOv8](https://img.shields.io/badge/YOLO-v8-orange.svg)](https://ultralytics.com/)
+[![YOLOv11](https://img.shields.io/badge/YOLO-v11-orange.svg)](https://ultralytics.com/)
 
 An AI-powered web application designed to automate the reading and recording of utility meters. By using computer vision, it detects room numbers and meter values (both integer and decimal) from uploaded photos and syncs the data directly to Google Sheets.
 
@@ -20,7 +20,7 @@ An AI-powered web application designed to automate the reading and recording of 
 ## 🛠️ Tech Stack
 
 - **Backend:** Python (Flask)
-- **Computer Vision:** Ultralytics (YOLOv8), EasyOCR, OpenCV
+- **Computer Vision:** Ultralytics (YOLOv11), EasyOCR, OpenCV
 - **Integration:** Google Drive API v3, Google Sheets API v4
 - **Frontend:** Vanilla JavaScript, Tailwind CSS
 

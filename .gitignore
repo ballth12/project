@@ -111,6 +111,7 @@ detector copy*.py
 
 # --- AI Agents / Local Tools ---
 .agents/
+.claude/
 
 # --- Heroku ---
 .slug-post-clean
