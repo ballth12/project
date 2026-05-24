@@ -1,10 +1,13 @@
-# Python
+# ==============================================================================
+# RoomMeterApp - Comprehensive .gitignore
+# ==============================================================================
+
+# --- Python ---
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -19,30 +22,77 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-.dockerignore
-.gcloudignore
-Dockerfile
-requirements*.txt
-*.yaml
-*.bat
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.dep
+*.profile
+*.stats
+*.cover
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+cython_debug/
 
-# Virtual Environments
-venv*/
+# --- Virtual Environments ---
+.venv/
+venv/
 ENV/
 env/
+venv.bak/
+env.bak/
 
-# Local development settings
-.env
-.venv
+# --- IDEs & Editors ---
 .vscode/
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
 
-# Sensitive information
+# --- Operating Systems ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- Credentials & Secrets ---
+.env
+*.env
+.env.*
 client_secret.json
+client_secrets.json
+credentials.json
+token.json
+token.pickle
 *.pem
 *.key
+*.p12
 
-# Generated files
+# --- Application Specific / Outputs ---
 uploads/
 processed/
 data-test*/
@@ -50,24 +100,17 @@ metertest*/
 ocr_reports*/
 accuracy_reports*/
 testM_reports*/
+
+# --- Custom Dev Scratch Files ---
+# Note: test*.py is ignored to keep local scratch scripts out of git. 
+# Rename files if you wish to track formal unit tests (e.g. test_*.py with negation or in a tests/ folder).
 test*.py
 read*.py
 detector copy*.py
-
-# Model files
-# *.pt
-# *.pth
-# *.onnx
-
-# Temporary files
-.DS_Store
-Thumbs.db
-*.tmp
-*.bak
-*.swp
-*.md
-!GEMINI.md
 *.puml
 
-# Heroku
+# --- AI Agents / Local Tools ---
+.agents/
+
+# --- Heroku ---
 .slug-post-clean
